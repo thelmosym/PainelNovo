@@ -1,0 +1,16 @@
+# Arquivos temporários de bloqueio do Excel
+~$*.xlsx
+~$*.xlsm
+~$*.xls
+~$*.csv
+
+# Cache e compilação Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Arquivos de sistema operacional
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+.DS_Store
