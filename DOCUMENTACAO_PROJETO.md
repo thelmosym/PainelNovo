@@ -407,7 +407,7 @@ O módulo [Codes/VBA/Funções Novas/modulo1.vba](Codes/VBA/Fun%C3%A7%C3%B5es%20
 Contratos configurados no código:
 
 | Contrato | Número SAP | Sufixo/estado |
-|---|---:|---|
+| --- | ---: | --- |
 | `PA-LT2` | `4600687006` | `BA` |
 | `IRON-LT1-RJ` | `4600686987` | vazio |
 | `IRON-LT1-SP` | `4600686987` | vazio |
