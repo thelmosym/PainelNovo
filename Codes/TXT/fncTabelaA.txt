@@ -1,0 +1,330 @@
+Attribute VB_Name = "fncTabelaA"
+'================================================================================================= ===================
+'Módulo funções tabelaA
+'Obs.: Todas as funções desenvolvidas na tabela A
+'Obs.: As tabelas foram desenvolvidas com base no contrato de guarda externa
+'================================================================================================= ===================
+ Option Explicit
+
+Function pesquisar_linhaPPU_arm(sAtividade As String, sItem As String) As String
+'Função para pesquisar código da linha de serviço para armazenamento
+
+Dim i As Integer
+Dim bEncontrou As Boolean
+Dim nResultado As String
+
+i = 2
+Do While Planilha3.Cells(i, 19) <> "" And Not bEncontrou
+    If sAtividade = Planilha3.Cells(i, 19) And sItem = Planilha3.Cells(i, 20) Then
+        nResultado = Planilha3.Cells(i, 22)
+        bEncontrou = True
+    End If
+i = i + 1
+Loop
+
+pesquisar_linhaPPU_arm = nResultado
+
+End Function
+
+Function pesquisar_fc_arm(sItem As String) As Double
+'Função para pesquisar fator de conversão de item para armazenamento
+
+Dim i As Integer
+Dim bEncontrou As Boolean
+Dim nResultado As Double
+
+i = 2
+Do While Planilha3.Cells(i, 28) <> "" And Not bEncontrou
+    If sItem = Planilha3.Cells(i, 28) Then
+        nResultado = Planilha3.Cells(i, 33)
+        bEncontrou = True
+    End If
+i = i + 1
+Loop
+
+pesquisar_fc_arm = nResultado
+
+End Function
+
+Function pesquisar_referenciaQExec(sDescrAtividade As String) As String
+'Função para consultar referência de atividade
+
+Dim i As Integer
+Dim bEncontrou As Boolean
+Dim nResultado As String
+
+i = 2
+Do While Planilha3.Cells(i, 11) <> "" And Not bEncontrou
+    If sDescrAtividade = Planilha3.Cells(i, 11) Then
+        nResultado = Planilha3.Cells(i, 13)
+        bEncontrou = True
+    End If
+i = i + 1
+Loop
+
+pesquisar_referenciaQExec = nResultado
+
+End Function
+
+Function pesquisar_referenciaFDM(sDescrAtividade As String) As Integer
+'Função para consultar referência de FDM
+
+Dim i As Integer
+Dim bEncontrou As Boolean
+Dim nResultado As Integer
+
+i = 2
+Do While Planilha3.Cells(i, 11) <> "" And Not bEncontrou
+    If sDescrAtividade = Planilha3.Cells(i, 11) Then
+        nResultado = Planilha3.Cells(i, 12)
+        bEncontrou = True
+    End If
+i = i + 1
+Loop
+
+pesquisar_referenciaFDM = nResultado
+
+End Function
+
+Function pesquisar_FC_migracao(sDescrAtividade As String, sItem As String) As Double
+'Função para pesquisar FC da atividade de migração
+
+Dim i As Integer
+Dim bEncontrou As Boolean
+Dim nResultado As Double
+
+i = 2
+Do While Planilha3.Cells(i, 36) <> "" And Not bEncontrou
+    If sDescrAtividade = Planilha3.Cells(i, 36) And sItem = Planilha3.Cells(i, 39) Then
+        nResultado = Format(Planilha3.Cells(i, 41), "#.000")
+        bEncontrou = True
+    End If
+i = i + 1
+Loop
+
+pesquisar_FC_migracao = nResultado
+
+End Function
+
+Function pesquisar_FC_digitalizacao(sDescrAtividade As String, sItem As String) As Double
+'Função para pesquisar FC da atividade de digitalização
+
+Dim i As Integer
+Dim bEncontrou As Boolean
+Dim nResultado As Double
+
+i = 2
+Do While Planilha3.Cells(i, 44) <> "" And Not bEncontrou
+    If sDescrAtividade = Planilha3.Cells(i, 44) And sItem = Planilha3.Cells(i, 47) Then
+        nResultado = Format(Planilha3.Cells(i, 49), "#.000")
+        bEncontrou = True
+    End If
+i = i + 1
+Loop
+
+pesquisar_FC_digitalizacao = nResultado
+
+End Function
+
+Function pesquisar_unidade(sDescrAtividade As String) As String
+'Função para pesquisar unidade
+
+Dim i As Integer
+Dim bEncontrou As Boolean
+Dim nResultado As String
+
+i = 2
+Do While Planilha3.Cells(i, 19) <> "" And Not bEncontrou
+    If sDescrAtividade = Planilha3.Cells(i, 19) Then
+        nResultado = Planilha3.Cells(i, 21)
+        bEncontrou = True
+    End If
+i = i + 1
+Loop
+
+pesquisar_unidade = nResultado
+
+End Function
+
+Function pesquisar_linhaPPU(sDescrAtividade As String) As String
+'Função para pesquisar linha PPU
+
+Dim i As Integer
+Dim bEncontrou As Boolean
+Dim nResultado As String
+
+i = 2
+Do While Planilha3.Cells(i, 19) <> "" And Not bEncontrou
+    If sDescrAtividade = Planilha3.Cells(i, 19) Then
+        nResultado = Planilha3.Cells(i, 22)
+        bEncontrou = True
+    End If
+i = i + 1
+Loop
+
+pesquisar_linhaPPU = nResultado
+
+End Function
+
+Function validar_localizacao(sAtividade As String) As Boolean
+'Função para permitir validação de dados entre localidades
+
+Dim bResultado As Boolean
+
+bResultado = False
+Select Case sAtividade
+    Case "DEVOLUCAO DE EMPRESTIMO"
+        bResultado = True
+    Case "COLETA DE EMBALAGEM"
+        bResultado = True
+    Case "COLETA DE ITEM AVULSO"
+        bResultado = True
+    Case "ENTREGA DE EMBALAGEM EXPRESSO"
+        bResultado = True
+    Case "ENTREGA DE EMBALAGEM NORMAL"
+        bResultado = True
+    Case "ENTREGA DE ITEM EXPRESSO"
+        bResultado = True
+    Case "ENTREGA DE ITEM NORMAL"
+        bResultado = True
+End Select
+
+validar_localizacao = bResultado
+
+End Function
+
+Function pesquisar_itemPPU(sLinhaPPU As String) As String
+'Função para pesquisar item PPU
+
+Dim i As Integer
+Dim bEncontrou As Boolean
+Dim nResultado As String
+
+i = 2
+Do While Planilha3.Cells(i, 19) <> "" And Not bEncontrou
+    If sLinhaPPU = Planilha3.Cells(i, 22) Then
+        nResultado = Planilha3.Cells(i, 18)
+        bEncontrou = True
+    End If
+i = i + 1
+Loop
+
+pesquisar_itemPPU = nResultado
+
+End Function
+
+Function pesquisar_agrupamento(sAtividade As String, sAtividadeN As String) As Boolean
+'Função para pesquisar compatibilidade de atividades para agrupamento
+
+
+Dim i As Integer
+Dim bEncontrou As Boolean
+Dim nValor1 As String
+Dim nValor2 As String
+
+i = 2
+bEncontrou = False
+Do While Planilha3.Cells(i, 60) <> "" And Not bEncontrou
+nValor1 = Planilha3.Cells(i, 60)
+nValor2 = Planilha3.Cells(i, 61)
+    If sAtividade = nValor1 And sAtividadeN = nValor2 Then
+        bEncontrou = True
+    End If
+i = i + 1
+Loop
+
+pesquisar_agrupamento = bEncontrou
+
+End Function
+
+Function pesquisar_referenciaPrazo(sDescrAtividade As String) As String
+'Função para consultar referência de prazo
+'Obs.:Referência de prazo consiste nas descrições: Tabela e Fiscalização
+'Tabela: prazo em dias do contrato (planilha tabelaA)
+'Fiscalização: prazo em dias informado pela fiscalização
+
+Dim i As Integer
+Dim bEncontrou As Boolean
+Dim nResultado As String
+
+i = 2
+Do While Planilha3.Cells(i, 11) <> "" And Not bEncontrou
+    If sDescrAtividade = Planilha3.Cells(i, 11) Then
+        nResultado = Planilha3.Cells(i, 14)
+        bEncontrou = True
+    End If
+i = i + 1
+Loop
+
+pesquisar_referenciaPrazo = nResultado
+
+End Function
+
+Function pesquisar_prazo(sContrato As String, sDescrAtividade As String, sGrupo As String) As Double
+'Função para pesquisar prazo conforme contrato
+'Obs.: o prazo é estipulado conforme contrato, atividade e grupo de município, pois são valores diferentes
+
+Dim i As Integer
+Dim bEncontrou As Boolean
+Dim nResultado As Double
+
+i = 2
+Do While Planilha3.Cells(i, 52) <> "" And Not bEncontrou
+    If sContrato = Planilha3.Cells(i, 52) And sDescrAtividade = Planilha3.Cells(i, 53) And sGrupo = Planilha3.Cells(i, 55) Then
+        nResultado = Planilha3.Cells(i, 57)
+        bEncontrou = True
+    End If
+i = i + 1
+Loop
+
+pesquisar_prazo = nResultado
+
+End Function
+
+Function validar_itemDescricao(ByVal sAtividade As String, ByVal sItem As String) As Boolean
+'Função para pesquisar item vinculado a atividade
+
+Dim i As Integer
+Dim bEncontrou As Boolean
+Dim nValor1 As String
+Dim nValor2 As String
+
+i = 2
+bEncontrou = False
+Do While Planilha3.Cells(i, 19) <> "" And Not bEncontrou
+nValor1 = Planilha3.Cells(i, 19)
+nValor2 = Planilha3.Cells(i, 20)
+    If sAtividade = nValor1 And sItem = nValor2 Then
+        bEncontrou = True
+    End If
+i = i + 1
+Loop
+
+validar_itemDescricao = bEncontrou
+
+End Function
+
+Function validar_contratoUF(ByVal sContrato As String, ByVal sUF As String) As Boolean
+'Função para validar empresa/contrato e localidade/UF
+'Informa ao usuário empresa/contrato divergente com localidade/UF
+
+Dim i As Integer
+Dim bEncontrou As Boolean
+Dim nValor1 As String
+Dim nValor2 As String
+
+i = 2
+bEncontrou = False
+Do While Planilha3.Cells(i, 70) <> "" And Not bEncontrou
+nValor1 = Planilha3.Cells(i, 71)
+nValor2 = Planilha3.Cells(i, 70)
+    If sContrato = nValor1 And sUF = nValor2 Then
+        bEncontrou = True
+    End If
+i = i + 1
+Loop
+
+validar_contratoUF = bEncontrou
+
+End Function
+

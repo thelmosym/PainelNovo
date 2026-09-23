@@ -1,0 +1,151 @@
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "Planilha2"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = True
+'================================================================================================= ===================
+'Módulo procedimento dadosPETROBRAS
+'Obs.: Todo desenvolvimento de procedimentos na planilha dadosPETROBRAS conforme dados de sistemas ...
+'... PETROBRAS importados para o painel de controle
+'================================================================================================= ===================
+Option Explicit
+
+
+Const MSG_TITULO_DADOPTA As String = "Painel de Controle - dadosPETROBRAS"
+Sub btImportDadosPETROBRAS()
+'Procedimento para importar dados de relatórios extraídos da PETROBRAS
+
+Dim sDir As String
+Dim sMensagem As String
+
+sDir = Planilha5.Range("C41")
+
+'Verifica se diretório existe
+If Dir(sDir, vbDirectory) = "" Then
+    MsgBox _
+    "Procedimento interrompido. Diretório não existe", vbExclamation, MSG_TITULO_DADOPTA
+    Exit Sub
+End If
+
+sMensagem = MsgBox("Importar dados do sistema " & Planilha6.Range("L19") & "." & _
+Chr(10) & "INICIAR?", vbYesNo, MSG_TITULO_DADOPTA)
+If sMensagem = vbNo Then
+    MsgBox "Exportação cancelada.", vbInformation, MSG_TITULO_DADOPTA
+    Exit Sub
+End If
+
+'Limpa dados
+Planilha2.Range("A1:DD100000").ClearContents
+
+Select Case Planilha6.Range("L19")
+    Case "CLICK"
+        Call dadosImportClick(sDir)
+    Case "SERVICE NOW"
+        '@@@Criar script com o Service Now ativo
+        MsgBox "Script não existe. Entre em contato com a gestão de atendimento.", vbExclamation, MSG_TITULO_DADOPTA
+End Select
+
+End Sub
+
+Sub dadosImportClick(sDir As String)
+'Procedimento para importar dados de relatórios extraídos da PETROBRAS
+'Obs.: dados do sistema Click
+
+Dim sArq As String
+Dim wbRL As Workbook
+Dim wsRL As Worksheet
+Dim i As Integer
+Dim col As String
+Dim lULin As Long
+
+sArq = verificar_arq_atual(sDir)
+
+'Se pasta estiver vazia, o procedimento sai
+If sArq = "" Then
+ MsgBox ExibirMsg("pastaVazia"), vbExclamation, MSG_TITULO_DADOPTA
+ Exit Sub
+End If
+
+Application.ScreenUpdating = False
+
+Set wbRL = Workbooks.Open(sArq)
+Set wsRL = wbRL.Worksheets(1)
+
+'Retira o filtro das planilhas
+If wsRL.AutoFilterMode = True Then
+    wsRL.AutoFilter.ShowAllData
+End If
+
+i = WorksheetFunction.CountA(wsRL.Range("1:1"))
+col = converter_numParaLetra(i)
+lULin = wsRL.Cells(wsRL.Rows.Count, "A").End(xlUp).Row
+
+'Ativa a planilha
+wsRL.Activate
+'Faz cópia das informações
+wsRL.Range("A1:" & col & lULin).Copy
+'Ativa planilha do painel a ser copiado
+Planilha2.Activate
+Planilha2.Range("A1").Select
+Selection.PasteSpecial Paste:=xlPasteValues
+wsRL.Application.CutCopyMode = False
+
+'Fecha arquivo
+wbRL.Close (False)
+  
+Application.ScreenUpdating = True
+Planilha6.Activate
+
+MsgBox "Procedimento realizado com sucesso.", vbInformation, MSG_TITULO_DADOPTA
+
+End Sub
+
+Sub preenchimentoDadosClick()
+'Procedimento para preenchimento dos dados da planilha dados PETROBRAS no painel de controle
+'Obs.: a referência será na coluna G
+
+Dim iULin As Integer
+Dim i As Integer
+Dim sCodSolicitacao As String
+
+iULin = Planilha7.Range("G5000").End(xlUp).Row
+For i = 3 To iULin
+    If Planilha7.Cells(i, 7) <> "" Then
+        sCodSolicitacao = Planilha7.Cells(i, 7)
+        
+        'Preenche coluna F
+        If Planilha7.Cells(i, 6) = "" Then
+            Planilha7.Cells(i, 6).Value = "Click"
+        End If
+        
+        'Preenche coluna H
+        If Planilha7.Cells(i, 8) = "" Then
+           Planilha7.Cells(i, 8).Value = "XXXX"
+        End If
+        
+        'Preenche coluna I
+        If Planilha7.Cells(i, 9) = Empty Then
+            Planilha7.Cells(i, 9).Value = pesquisar_data_solicitante(sCodSolicitacao)
+        End If
+        
+        'Preenche coluna J
+        If Planilha7.Cells(i, 10) = "" Then
+            Planilha7.Cells(i, 10).Value = pesquisar_gerencia(sCodSolicitacao)
+        End If
+        
+        'Preenche coluna V
+        If Planilha7.Cells(i, 22) = "" Then
+            Planilha7.Cells(i, 22).Value = pesquisar_localidade(sCodSolicitacao)
+        End If
+        
+    End If
+sCodSolicitacao = ""
+Next i
+
+MsgBox "Procedimento realizado com sucesso.", vbInformation, MSG_TITULO_DADOPTA
+
+End Sub

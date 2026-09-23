@@ -1,0 +1,101 @@
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "Planilha4"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = True
+'================================================================================================= ===================
+'Módulo procedimento tabelaB
+'Obs.: Todo desenvolvimento de procedimentos para a planilha tabelaB de forma geral.
+'================================================================================================= ===================
+Option Explicit
+
+
+Const MSG_TITULO_TABBA As String = "Painel de Controle - Dados entrada (Importação)"
+
+Sub btImportacaoTabelaB()
+'Copia dados de cada guia/planilha do arquivo "Tabelas" ao painel de controle > planilha tabelaB
+
+'VARIÁVEIS
+Dim sDirTabelaB As String
+Dim sNomeTabelaB As String
+
+Dim wbTabelaB As Workbook
+
+Dim iWSCont As Integer
+Dim iColA As Integer
+Dim iPlan As Integer
+Dim wsPlan As Worksheet
+Dim sNomePlan As String
+Dim c As Integer
+Dim sColLetra As String
+Dim iULin As Integer
+
+Dim sLin1 As String
+Dim sLin2 As String
+
+Application.ScreenUpdating = False
+
+'apagando dados anteriores
+Planilha4.Range("A1:BZ10000").ClearContents
+Planilha4.Columns("A:BZ").ColumnWidth = 9
+
+'Grava diretório conforme planilha "Rede"
+sDirTabelaB = Planilha5.Range("C32")
+
+'Verifica se arquivo existe na pasta/diretório
+If Dir(sDirTabelaB) = "" Then
+    MsgBox "Procedimento interrompido. Arquivo e/ou diretório não existe." & Chr(10) & _
+    Chr(10) & _
+    "Obs.: Verifique diretório informado e tente novamente.", vbCritical, MSG_TITULO_TABBA
+    Exit Sub
+End If
+
+
+'Atribui variável
+Set wbTabelaB = Workbooks.Open(sDirTabelaB)
+
+iWSCont = wbTabelaB.Worksheets.Count 'Conta quantidade de planilhas
+iColA = 1
+For iPlan = 1 To iWSCont 'Executa laço de repetição para cada planilha
+    Set wsPlan = wbTabelaB.Worksheets(iPlan)
+    sNomePlan = wsPlan.Name
+    c = 1
+    Do While wsPlan.Cells(1, c) <> ""
+        sColLetra = converter_numParaLetra(c)
+        iULin = wsPlan.Range("A10000").End(xlUp).Row
+        Planilha4.Cells(1, iColA) = sNomePlan
+        wsPlan.Range(sColLetra & "1:" & sColLetra & iULin).Copy
+        Planilha4.Cells(2, iColA).PasteSpecial xlPasteValues
+        Application.CutCopyMode = False
+        iColA = iColA + 1
+    c = c + 1
+    Loop
+Next iPlan
+
+wbTabelaB.Close (False)
+
+'Executa laço de repetição para descrição de cada campo
+'Concatena campos (Exemplo: XXXXXX#XXXXXXX)
+c = 1
+Do While Planilha4.Cells(1, c) <> ""
+    sLin1 = Planilha4.Cells(1, c).Value
+    sLin2 = Planilha4.Cells(2, c).Value
+    Planilha4.Cells(1, c) = sLin1 & "#" & sLin2
+c = c + 1
+Loop
+
+Planilha4.Rows(2).Delete
+Planilha4.Columns("A:BZ").AutoFit
+Planilha6.Activate
+Planilha6.Range("J22") = Now
+
+Application.ScreenUpdating = True
+
+MsgBox MSG_INFORMACAO1, vbInformation, MSG_TITULO_TABBA
+
+End Sub
+

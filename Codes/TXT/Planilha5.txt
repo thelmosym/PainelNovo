@@ -1,0 +1,74 @@
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "Planilha5"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = True
+'================================================================================================= ===================
+'Módulo procedimento Rede
+'Obs.: Todo desenvolvimento de procedimentos para a planilha Rede conforme leituras de pastas e ...
+'... arquivos na rede, tanto para importação como exportação.
+'================================================================================================= ===================
+Option Explicit
+
+
+Sub atualizacaoDeRede()
+'Procedimento para atualizar diretórios do painel de controle para leitura de pastas e/ou arquivosna rede
+
+Dim sDir1 As String
+Dim splitDir() As String
+
+sDir1 = Planilha5.Range("C2")
+'sDir2 = Planilha5.Range("C3")
+'sDir3 = Planilha5.Range("C4")
+'sDir4 = Planilha5.Range("C5")
+
+'Dir1.1
+'Diretório
+Planilha5.Range("C11") = sDir1
+'Diretório final
+Planilha5.Range("C14") = sDir1 & Application.PathSeparator & Planilha5.Range("C12") & _
+                         Application.PathSeparator & Planilha5.Range("C13")
+
+'Dir1.2
+'Diretório
+Planilha5.Range("C20") = sDir1
+'Diretório final
+Planilha5.Range("C23") = sDir1 & Application.PathSeparator & Planilha5.Range("C21") & _
+                         Application.PathSeparator & Planilha5.Range("C22")
+
+'Dir1.3
+'Diretório
+Planilha5.Range("C29") = sDir1
+'Diretório final
+Planilha5.Range("C32") = sDir1 & Application.PathSeparator & Planilha5.Range("C30") & _
+                         Application.PathSeparator & Planilha5.Range("C31")
+
+'Dir1.4
+'Diretório
+Planilha5.Range("C38") = sDir1
+'Diretório final
+splitDir = Split(Planilha5.Range("C39"), "\")
+Planilha5.Range("C41") = sDir1 & Application.PathSeparator & splitDir(0) & Application.PathSeparator & _
+                         Planilha6.Range("C10") & Application.PathSeparator & _
+                         Planilha6.Range("C9") & Application.PathSeparator & splitDir(3)
+
+'Dir1.5
+'Diretório
+Planilha5.Range("C47") = sDir1
+'Diretório final
+Planilha5.Range("C50") = sDir1 & Application.PathSeparator & Planilha5.Range("C48")
+
+'Dir1.1
+'Diretório
+Planilha5.Range("C56") = sDir1
+'Diretório final
+Planilha5.Range("C59") = sDir1 & Application.PathSeparator & Planilha5.Range("C57") & _
+                         Application.PathSeparator & Planilha5.Range("C58")
+
+Erase splitDir
+
+End Sub

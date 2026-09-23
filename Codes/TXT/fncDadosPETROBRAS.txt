@@ -1,0 +1,143 @@
+Attribute VB_Name = "fncDadosPETROBRAS"
+'================================================================================================= ===================
+'Módulo função dadosPETROBRAS
+'Obs.: Todo desenvolvimento de funções para leitura dos dados da planilha dadosPETROBRAS ...
+'... importado de sistemas da PETROBRAS
+'================================================================================================= ===================
+Option Explicit
+
+Function pesquisar_Chave(sCod As String) As String
+'Função para pesquisar chave do solicitante
+'Obs.: Função baseada no relatório Click
+'      dados cliente
+
+Dim vPesq As Variant
+Dim iColA As Integer
+Dim iColB As Integer
+Dim nValor1 As String
+Dim bEncontrou As Boolean
+Dim i As Integer
+Dim nResultado As String
+
+vPesq = Planilha2.Rows("A1:XFD1").Find("Referência", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+iColA = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
+
+vPesq = Planilha2.Rows("A1:XFD1").Find("Grupo#UF", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+iColB = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
+
+bEncontrou = False
+i = 2
+Do While Planilha2.Cells(i, iColA) <> "" And Not bEncontrou
+    nValor1 = Planilha2.Cells(i, iColA)
+    If sCod = nValor1 Then
+        nResultado = Planilha2.Cells(i, iColB)
+        bEncontrou = True
+    End If
+i = i + 1
+Loop
+
+pesquisar_Chave = nResultado
+
+End Function
+
+Function pesquisar_data_solicitante(sCod As String) As Date
+'Função para pesquisar chave do solicitante
+'Obs.: Função baseada no relatório Click
+'      dados cliente
+
+Dim vPesq As Variant
+Dim iColA As Integer
+Dim iColB As Integer
+Dim nValor1 As String
+Dim bEncontrou As Boolean
+Dim i As Integer
+Dim nResultado As Date
+
+vPesq = Planilha2.Rows("A1:XFD1").Find("Referência", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+iColA = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
+
+vPesq = Planilha2.Rows("A1:XFD1").Find("Data/hora de registro", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+iColB = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
+
+bEncontrou = False
+i = 2
+Do While Planilha2.Cells(i, iColA) <> "" And Not bEncontrou
+    nValor1 = Planilha2.Cells(i, iColA)
+    If sCod = nValor1 Then
+        nResultado = Format(Planilha2.Cells(i, iColB), "dd/mm/yyyy hh:mm")
+        bEncontrou = True
+    End If
+i = i + 1
+Loop
+
+pesquisar_data_solicitante = nResultado
+
+End Function
+
+Function pesquisar_gerencia(sCod As String) As String
+'Função para pesquisar gerência
+'Obs.: Função baseada no relatório Click
+'      dados cliente
+
+Dim vPesq As Variant
+Dim iColA As Integer
+Dim iColB As Integer
+Dim nValor1 As String
+Dim bEncontrou As Boolean
+Dim i As Integer
+Dim nResultado As String
+
+vPesq = Planilha2.Rows("A1:XFD1").Find("Referência", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+iColA = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
+
+vPesq = Planilha2.Rows("A1:XFD1").Find("Nome da seção", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+iColB = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
+
+bEncontrou = False
+i = 2
+Do While Planilha2.Cells(i, iColA) <> "" And Not bEncontrou
+    nValor1 = Planilha2.Cells(i, iColA)
+    If sCod = nValor1 Then
+        nResultado = Planilha2.Cells(i, iColB)
+        bEncontrou = True
+    End If
+i = i + 1
+Loop
+
+pesquisar_gerencia = nResultado
+
+End Function
+
+Function pesquisar_localidade(sCod As String) As String
+'Função para pesquisar localidade
+'Obs.: Função baseada no relatório Click
+'      dados localização (Imóvel PETROBRAS)
+
+Dim vPesq As Variant
+Dim iColA As Integer
+Dim iColB As Integer
+Dim nValor1 As String
+Dim bEncontrou As Boolean
+Dim i As Integer
+Dim nResultado As String
+
+vPesq = Planilha2.Rows("A1:XFD1").Find("Referência", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+iColA = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
+
+vPesq = Planilha2.Rows("A1:XFD1").Find("Nome de site", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+iColB = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
+
+bEncontrou = False
+i = 2
+Do While Planilha2.Cells(i, iColA) <> "" And Not bEncontrou
+    nValor1 = Planilha2.Cells(i, iColA)
+    If sCod = nValor1 Then
+        nResultado = Planilha2.Cells(i, iColB)
+        bEncontrou = True
+    End If
+i = i + 1
+Loop
+
+pesquisar_localidade = nResultado
+
+End Function

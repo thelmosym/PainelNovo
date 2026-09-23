@@ -1,0 +1,211 @@
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "Planilha8"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = True
+'================================================================================================= ===================
+'Módulo procedimento do Armazenamento
+'Obs.: Todo desenvolvimento de procedimentos para o armazenamento de forma geral ...
+'================================================================================================= ===================
+Option Explicit
+
+Private Const MSG_PN_ARMAZ1 As String = "Painel de Controle - Armazenamento"
+
+Sub limpezaDadosArmazenamento()
+'Procedimento para limpeza de dados do armazenamento
+
+Dim vResultado As VbMsgBoxResult
+
+vResultado = MsgBox("Confirmar limpeza TODOS os dados do Armazenamento?", vbOKCancel, MSG_PN_ARMAZ1)
+
+If vResultado = vbOK Then
+    'Exclui valores, retira cor de fundo, padroniza fonte
+    Planilha8.Range("A2:J2003").ClearContents
+    Planilha8.Range("A2:J2003").Interior.ColorIndex = 0
+    Planilha8.Range("A2:J2003").Font.ColorIndex = 1
+    MsgBox "Todos os dados foram excluídos", vbInformation, MSG_PN_ARMAZ1
+ElseIf vResultado = vbCancel Then
+    MsgBox "Procedimento interrompido", vbInformation, MSG_PN_ARMAZ1
+End If
+
+End Sub
+
+Sub importacaoArmazenamento()
+'Procedimento para importar as coletas do painel de controle para a planilha Armazenamento
+
+'VARIÁVEIS
+'===============================================================================================
+Dim ul As Integer
+Dim i As Integer
+Dim vMsg As Integer
+Dim iCont As Integer
+Dim sLinha As String
+Dim sServico As String
+Dim sDado1 As String
+Dim sStatus As String
+Dim bEncontrou As Boolean
+Dim j As Integer
+Dim sDado2 As String
+
+'QUADRO DE VERIFICAÇÃO ANTES DE INSERIR OS DADOS NO ARMAZENAMENTO
+'===============================================================================================
+vMsg = MsgBox("IMPORTANTE: É obrigatório utilizar os botões de preenchimento e análise antes de transferir os dados para o Armazenamento." & _
+Chr(10) & Chr(10) & "Deseja continuar?", vbOKCancel, MSG_PN_ARMAZ1)
+
+If vMsg = vbCancel Then
+    Exit Sub
+End If
+
+Application.StatusBar = "Procedimento de Armazenamento em progresso. Aguarde..."
+
+'Informa usuário sobre dados duplicados na planilha Armazenamento
+i = 2
+Do While Planilha8.Cells(i, 2) <> ""
+    Planilha8.Cells(i, 10) = Planilha8.Cells(i, 1) & "#" & Planilha8.Cells(i, 2) & "#" & _
+                             Planilha8.Cells(i, 3)
+    iCont = WorksheetFunction.CountIf(Planilha8.Range("J2:J" & i), Planilha8.Cells(i, 10))
+    If iCont > 1 Then
+        sLinha = sLinha & i & "; "
+    End If
+i = i + 1
+Loop
+
+If sLinha <> "" Then
+    MsgBox "Procedimento interrompido. Há duplicidade no Armazenamento." & Chr(10) & _
+    "Verificar linhas abaixo e corrigi-las." & _
+    Chr(10) & Chr(10) & "Linha(s): " & sLinha, vbExclamation, MSG_PN_ARMAZ1
+    Planilha8.Range("J2:J5000").ClearContents 'Limpa os dados
+    Exit Sub
+End If
+
+'Verifica os serviços de DESTRUIÇÃO e BAIXA PERMANENTE do Painel com o Armazenamento
+'Obs.: Se alguma gerência não for encontrada, os dados não serão inseridos ...
+'... até que o responsável altere a lotação e esteja igual ao do painel de controle
+ul = Planilha7.Range("D2003").End(xlUp).Row
+For i = 3 To ul
+    sServico = Planilha7.Cells(i, 4)
+    If sServico = "DESTRUICAO SEGURA DE DOCUMENTO" Or sServico = "BAIXA PERMANENTE" Then
+        If Planilha7.Cells(i, 2) = "CO" Then
+            sDado1 = Planilha7.Cells(i, 3) & "-" & Planilha7.Cells(i, 27) & "#" & _
+            Planilha7.Cells(i, 10) & "#" & Planilha7.Cells(i, 5)
+            iCont = WorksheetFunction.CountIf(Planilha8.Range("J2:J10000"), sDado1)
+            If iCont = 0 Then
+                sLinha = sLinha & "Linha: " & i & " - " & sServico & ";" & Chr(10)
+            End If
+        End If
+    End If
+Next i
+
+If sLinha <> "" Then
+    MsgBox "Procedimento interrompido. Verificar linha(s) abaixo do painel de controle." & Chr(10) & _
+    "obs.: Contrato regional, gerência e item não encontrados no armazenamento." & _
+    Chr(10) & Chr(10) & sLinha, vbExclamation, MSG_PN_ARMAZ1
+    Planilha8.Range("J2:J10000").ClearContents 'Limpa os dados
+    Exit Sub
+End If
+
+
+'VERIFICAÇÃO DE DADOS E PREENCHIMENTO DO ARMAZENAMENTO
+'===============================================================================================
+'Limpeza de dados do Armazenamento para preenchimento
+Planilha8.Range("E2:H10000").ClearContents 'Limpa os dados
+
+ul = Planilha7.Range("G2003").End(xlUp).Row
+For i = 3 To ul
+    sStatus = Planilha7.Cells(i, 2)
+    sServico = Planilha7.Cells(i, 4)
+    
+    'Se o atendimento não estiver concluído, pula todo o script
+    If sStatus <> "CO" Then
+        GoTo proximaLinha
+    End If
+
+    'Se incluir sigla de isenção, a coleta não será transferida para o armazenamento
+    If Planilha7.Cells(i, 20) = "RCO" Then
+        GoTo proximaLinha
+    End If
+    
+    'Se o serviço não for o escolhido, pula todo o script
+    Select Case sServico
+        Case "COLETA DE EMBALAGEM"
+        Case "BAIXA PERMANENTE"
+        Case "DESTRUICAO SEGURA DE DOCUMENTO"
+        Case Else
+        GoTo proximaLinha
+    End Select
+
+    'Pesquisa dado do painel de controle no Armazenamento
+    sDado1 = Planilha7.Cells(i, 3) & "-" & Planilha7.Cells(i, 27) & "#" & Planilha7.Cells(i, 10) & "#" & Planilha7.Cells(i, 5)
+    iCont = WorksheetFunction.CountIf(Planilha8.Range("J2:J10000"), sDado1)
+    'Não encontrando e o serviço refere-se a novos itens
+    If iCont = 0 And sServico = "COLETA DE EMBALAGEM" Then
+    
+        ul = Planilha8.Range("A10000").End(xlUp).Row + 1
+        Planilha8.Cells(ul, 1) = Planilha7.Cells(i, 3) & "-" & Planilha7.Cells(i, 27)
+        Planilha8.Cells(ul, 2) = Planilha7.Cells(i, 10)
+        Planilha8.Cells(ul, 3) = Planilha7.Cells(i, 5)
+        Planilha8.Cells(ul, 4) = 0
+        Planilha8.Cells(ul, 7) = Planilha7.Cells(i, 16)
+        'O cálculo QUAm da coluna H terá funcionalidade abaixo
+        Planilha8.Cells(ul, 9) = pesquisar_fc_arm(Planilha7.Cells(i, 5))
+        Planilha8.Cells(ul, 10) = sDado1
+        
+    'Dado encontrado no Armazenamento (Será aplicado apenas a quantidade)
+    ElseIf iCont = 1 Then
+        
+        bEncontrou = False
+        j = 2
+        Do While Planilha8.Cells(j, 2) <> "" And Not bEncontrou
+        sDado2 = Planilha8.Cells(j, 10)
+        If sDado1 = sDado2 Then
+            Select Case sServico
+            Case "BAIXA PERMANENTE"
+              Planilha8.Cells(j, 5) = Planilha8.Cells(j, 5) + Planilha7.Cells(i, 16)
+            Case "COLETA DE EMBALAGEM"
+              Planilha8.Cells(j, 7) = Planilha8.Cells(j, 7) + Planilha7.Cells(i, 16)
+            Case "DESTRUICAO SEGURA DE DOCUMENTO"
+              Planilha8.Cells(j, 6) = Planilha8.Cells(j, 6) + Planilha7.Cells(i, 16)
+            End Select
+        bEncontrou = True
+        End If
+        j = j + 1
+        Loop
+        
+    End If
+
+proximaLinha:
+Next i
+
+'FUNCIONALIDADE PARA CALCULAR TOTAL (QUAm)
+'===============================================================================================
+'Faz o cálculo dos dados inseridos
+i = 2
+Do While Planilha8.Cells(i, 1) <> ""
+    'Fórmula conforme item 11.1.5.1 do contrato de guarda externa
+    'QUAm = QUAm-1 + QNm - QBm - QDm
+    Planilha8.Cells(i, 8) = _
+    Planilha8.Cells(i, 4).Value + Planilha8.Cells(i, 7).Value - Planilha8.Cells(i, 5).Value - Planilha8.Cells(i, 6).Value
+    
+    If Planilha8.Cells(i, 8) <= 0 Then
+        sLinha = sLinha & i & "; "
+    End If
+    
+i = i + 1
+Loop
+
+If sLinha <> "" Then
+    MsgBox "Linha(s) abaixo com saldo zerado ou negativo." & Chr(10) & _
+    Chr(10) & Chr(10) & sLinha, vbExclamation, MSG_PN_ARMAZ1
+End If
+
+Planilha8.Range("J2:J10000").ClearContents
+
+Application.StatusBar = False
+
+MsgBox "Procedimento realizado com sucesso.", vbInformation, MSG_PN_ARMAZ1
+
+End Sub
