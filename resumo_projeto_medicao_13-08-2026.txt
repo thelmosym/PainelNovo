@@ -1,0 +1,549 @@
+Como não há um agente/skill específica para geração de arquivos .txt no momento, vou montar o conteúdo completo aqui no chat, em um bloco de texto único, para que você copie e salve localmente como .txt. Assim você pode retomar exatamente de onde parou.
+
+═══════════════════════════════════════════════════════════════════
+PROJETO MEDIÇÃO — RESUMO DA CONVERSA (ChatPetrobras)
+Usuário: Thelmo Pinheiro Sym - PrestServ | Gerência: COMPARTILHADO/SC/SID
+Contexto: "Meu Contexto" — Projeto Medição
+Data de referência: 13/08/2026
+═══════════════════════════════════════════════════════════════════
+
+1) OBJETIVO GERAL DO PROJETO
+-----------------------------------------------------------------
+Migração de planilha VBA (Painel de Controle - módulo Planilha7) para
+Power Query (linguagem M), incluindo cálculo de FDM (Fator de
+Desempenho Mensal) e SLA (prazo de atendimento).
+
+Arquivos de referência do "Meu Contexto" (Projeto Medição):
+- fncDadosPETROBRAS.txt
+- fncEditalGuarda.txt
+- fncPainelDeControle.txt
+- Planilha6.txt / Planilha7.txt / Planilha8.txt
+- subDadosSaidaExportacao.txt
+- subMCGuardaExterna.txt
+- Nova Planilha Controle Medição.docx
+
+2) LÓGICA VBA ORIGINAL IDENTIFICADA (módulo Planilha7 / fncGeral)
+-----------------------------------------------------------------
+- Sub analiseDeDados() [Planilha7]: percorre linhas com Situação="CO",
+  valida campos obrigatórios, calcula SLA via pesquisar_prazo +
+  Select Case dPrazo (0 / 0.5 / 1 / 2 / 3 / 4 / 5) chamando
+  calcular_dataSLA (função em fncGeral) e classifica em NORMAL/
+  EXPRESSO/ISENTO e NOPRAZO/FORADOPRAZO.
+- Function calcular_dataSLA (fncGeral): calcula data/hora final
+  somando tempo de resposta, respeitando expediente 08h-17h e
+  almoço 12h-13h, considerando feriados/fins de semana.
+- Lógica duplicada também em subDadosSaidaExportacao.
+
+Proposta inicial (primeira etapa): extrair essa lógica para uma
+função VBA reutilizável fnCalcularPrazoSLA (módulo fncGeral),
+chamada dentro de analiseDeDados() para preencher uma nova coluna
+(sugestão: coluna AJ/36) com o resultado do SLA. Pendente confirmação
+do usuário sobre coluna exata e se outros Subs devem ser atualizados.
+
+3) MIGRAÇÃO PARA POWER QUERY (linguagem M)
+-----------------------------------------------------------------
+Consulta principal fornecida pelo usuário (Query de importação/
+transformação de arquivos de monitoramento), estruturada em 11 seções:
+ Seção 0 — Buffer de tabelas de referência
+ Seção 1 — Carregamento e expansão de arquivos (Folder.Files)
+ Seção 2 — Limpeza, tipagem e filtro de Situação = "CO"
+ Seção 3 — Validação de período (fnGerarPeriodo)
+ Seção 4 — Renomear/reordenar/remover colunas finais e tipagem
+ Seção 5 — Transformações de texto e ordenação por Contrato
+ Seção 6 — Enriquecimento com Localidade e Galpão (merges)
+ Seção 7 — Cálculo de duplicatas para FDM (concat + índice + group by)
+ Seção 8 — Referências de prazo, grupo e contrato (merges)
+ Seção 9 — Separação de Data/Hora (Abertura e Fechamento)
+ Seção 10 — Classificação FDM e SLA via fnClassificarFDM (com try/otherwise)
+ Seção 11 (ADICIONADA NESTA CONVERSA) — Novas colunas "Data SLA" e
+           "Prazo SLA"
+
+4) FUNÇÕES M CONFIRMADAS PELO USUÁRIO
+-----------------------------------------------------------------
+
+--- fnCalcularDataSLA ---
+let
+fnCalcularDataSLA = (dataInicial as date, horaInicial as time, tempoResposta as duration) as datetime =>
+let
+    HoraEntrada = #time(8, 0, 0),
+    HoraSaida = #time(17, 0, 0),
+    HoraIniAlmoco = #time(12, 0, 0),
+    HoraFimAlmoco = #time(13, 0, 0),
+
+    TemExpediente = (data as date) as logical =>
+        let
+            dow = Date.DayOfWeek(data, Day.Monday)
+        in
+            dow <= 4,
+
+    ProcessarDia = (estado as record) as record =>
+        let
+            data0 = estado[Data],
+            hora0 = estado[Hora],
+            restante0 = estado[Restante],
+            Resultado =
+                if not TemExpediente(data0) then
+                    [ Data = Date.AddDays(data0, 1), Hora = #time(0,0,0), Restante = restante0 ]
+                else
+                    let
+                        HoraAjustada =
+                            if hora0 > HoraSaida then HoraSaida
+                            else if hora0 < HoraEntrada then HoraEntrada
+                            else if hora0 > HoraIniAlmoco and hora0 < HoraFimAlmoco then HoraFimAlmoco
+                            else hora0,
+                        DisponivelManha = if HoraAjustada < HoraIniAlmoco then HoraIniAlmoco - HoraAjustada else #duration(0,0,0,0),
+                        CabeNaManha = HoraAjustada < HoraIniAlmoco and restante0 <= DisponivelManha,
+                        HoraInicioTarde = if HoraAjustada < HoraIniAlmoco then HoraFimAlmoco else HoraAjustada,
+                        RestanteNaTarde = if HoraAjustada < HoraIniAlmoco then restante0 - DisponivelManha else restante0,
+                        DisponivelTarde = HoraSaida - HoraInicioTarde,
+                        CabeNaTarde = RestanteNaTarde <= DisponivelTarde,
+                        ResultadoDia =
+                            if CabeNaManha then
+                                [ Data = data0, Hora = HoraAjustada + restante0, Restante = #duration(0,0,0,0) ]
+                            else if CabeNaTarde then
+                                [ Data = data0, Hora = HoraInicioTarde + RestanteNaTarde, Restante = #duration(0,0,0,0) ]
+                            else
+                                [ Data = Date.AddDays(data0, 1), Hora = #time(0,0,0), Restante = RestanteNaTarde - DisponivelTarde ]
+                    in
+                        ResultadoDia
+        in
+            Resultado,
+
+    EstadoInicial = [ Data = dataInicial, Hora = horaInicial, Restante = tempoResposta ],
+
+    Historico = List.Generate(
+        () => EstadoInicial,
+        (e) => e[Restante] > #duration(0,0,0,0),
+        (e) => ProcessarDia(e)
+    ),
+
+    UltimoPendente = if List.Count(Historico) = 0 then EstadoInicial else List.Last(Historico),
+    EstadoFinal = if tempoResposta <= #duration(0,0,0,0) then EstadoInicial else ProcessarDia(UltimoPendente)
+in
+    DateTime.From(EstadoFinal[Data]) + (EstadoFinal[Hora] - #time(0,0,0))
+in
+    fnCalcularDataSLA
+
+--- fnCalcularPrazoSLA ---
+let
+fnCalcularPrazoSLA = (dPrazo as number, dataAbertura as date, horaAbertura as time) as nullable datetime =>
+    if dPrazo = 0 then null
+    else if dPrazo = 0.5 then
+        let
+            Base = fnCalcularDataSLA(dataAbertura, horaAbertura, #duration(0,4,0,0)),
+            DataBase = Date.From(Base),
+            Resultado =
+                if horaAbertura >= #time(8,0,0) and horaAbertura <= #time(11,0,0) then
+                    DateTime.From(DataBase) + #duration(0,17,0,0)
+                else if horaAbertura > #time(11,0,0) and horaAbertura <= #time(16,0,0) then
+                    fnCalcularDataSLA(DataBase, #time(12,0,0), #duration(0,8,0,0))
+                else
+                    DateTime.From(DataBase) + #duration(0,17,0,0)
+        in
+            Resultado
+    else if dPrazo = 1 then fnCalcularDataSLA(dataAbertura, horaAbertura, #duration(0,8,0,0))
+    else if dPrazo = 2 then fnCalcularDataSLA(dataAbertura, horaAbertura, #duration(0,16,0,0))
+    else if dPrazo = 3 then fnCalcularDataSLA(dataAbertura, horaAbertura, #duration(1,0,0,0))
+    else if dPrazo = 4 then fnCalcularDataSLA(dataAbertura, horaAbertura, #duration(1,8,0,0))
+    else if dPrazo = 5 then fnCalcularDataSLA(dataAbertura, horaAbertura, #duration(1,16,0,0))
+    else null
+in
+    fnCalcularPrazoSLA
+
+5) CONSULTA PRINCIPAL ATUALIZADA (COM AS SEÇÕES 0 A 11)
+-----------------------------------------------------------------
+let
+
+// ═══════════════════════════════════════════════════════════════════
+// SEÇÃO 0 — TABELAS DE REFERÊNCIA (BUFFER AQUI, NÃO NA TABELA PRINCIPAL)
+// ═══════════════════════════════════════════════════════════════════
+RefLocalidadeComEndereco = Table.Buffer(#"Localidade Com Endereço"),
+RefValidUFGalpao = Table.Buffer(validUFGalpao),
+RefValEnderecoGalpao = Table.Buffer(valEnderecoGalpao),
+RefTabRefPrazoFDM = Table.Buffer(tabRefPrazoFDM),
+RefGrupo = Table.Buffer(Grupo),
+RefTabelaPrazoContrato = Table.Buffer(
+    Table.TransformColumnTypes(tabelaPrazoContrato, {{"Prazo", type number}})
+),
+
+// ═══════════════════════════════════════════════════════════════════
+// SEÇÃO 1 — CARREGAMENTO E EXPANSÃO
+// ═══════════════════════════════════════════════════════════════════
+Fonte = Folder.Files("C:\Users\DOK4\OneDrive - PETROBRAS\Área de Trabalho\Thelmo\Monitoramento\2026\07-Julho"),
+ArquivosVisiveis = Table.SelectRows(Fonte, each [Attributes]?[Hidden]? <> true),
+ArquivosTransformados = Table.AddColumn(ArquivosVisiveis, "Transformar Arquivo", each #"Transformar Arquivo"([Content])),
+RenomearOrigem = Table.RenameColumns(ArquivosTransformados, {"Name", "Nome da Origem"}),
+SelecionarColunas = Table.SelectColumns(RenomearOrigem, {"Nome da Origem", "Transformar Arquivo"}),
+ExpandirTabela = Table.ExpandTableColumn(
+    SelecionarColunas,
+    "Transformar Arquivo",
+    Table.ColumnNames(#"Transformar Arquivo"(#"Arquivo de Amostra"))
+),
+
+ExpandirTabelaBuffer = Table.Buffer(ExpandirTabela),
+
+// ═══════════════════════════════════════════════════════════════════
+// SEÇÃO 2 — LIMPEZA, TIPAGEM E FILTRO DE SITUAÇÃO
+// ═══════════════════════════════════════════════════════════════════
+RemoverColunas = Table.RemoveColumns(ExpandirTabelaBuffer, {
+    "Nome da Origem", "Atendente", "UF", "Nome Solicitante"
+}),
+
+DefinirTiposIniciais = Table.TransformColumnTypes(RemoverColunas, {
+    {"Situação", type text},
+    {"Contrato", type text},
+    {"Período#(lf)faturamento", type date}
+}),
+
+FiltrarSituacao = Table.SelectRows(DefinirTiposIniciais, each [Situação] = "CO"),
+
+FiltrarContratos = Table.SelectRows(FiltrarSituacao, each
+    ([#"Período#(lf)faturamento"] <> null) and
+    ([Contrato] = "IRON-LT1" or [Contrato] = "PA-LT2")
+),
+
+FiltrarContratosBuffer = Table.Buffer(FiltrarContratos),
+
+// ═══════════════════════════════════════════════════════════════════
+// SEÇÃO 3 — VALIDAÇÃO DE PERÍODO
+// ═══════════════════════════════════════════════════════════════════
+ValidarPeriodo = Table.AddColumn(FiltrarContratosBuffer, "ValidarPeriodo", each
+    let
+        sPeriodo = fnGerarPeriodo(PeriodoMes, PeriodoAno),
+        partes = Text.Split(sPeriodo, " à "),
+        dataInicio = Date.FromText(partes{0}, [Format="dd/MM/yyyy"]),
+        dataFim = Date.FromText(partes{1}, [Format="dd/MM/yyyy"]),
+        dataFat = Date.From([#"Período#(lf)faturamento"])
+    in
+        if dataFat >= dataInicio and dataFat <= dataFim then "S" else "N"
+),
+
+FiltrarPeriodoValido = Table.SelectRows(ValidarPeriodo, each [ValidarPeriodo] = "S"),
+RemoverColunaValidacao = Table.RemoveColumns(FiltrarPeriodoValido, {"ValidarPeriodo"}),
+
+FiltrarPeriodoValidoBuffer = Table.Buffer(RemoverColunaValidacao),
+
+// ═══════════════════════════════════════════════════════════════════
+// SEÇÃO 4 — RENOMEAR, REORDENAR, REMOVER COLUNAS FINAIS E TIPAR O RESTO
+// ═══════════════════════════════════════════════════════════════════
+RenomearColunas = Table.RenameColumns(FiltrarPeriodoValidoBuffer, {{"D. solicitação", "Data solicitação"}}),
+
+RemoverColunasFinais = Table.RemoveColumns(RenomearColunas, {
+    "OS#(lf)disponibilizada?", "LOG",
+    "Caixa#(lf)(20kg)", "Caixa#(lf)(Mídia)",
+    "Caixa Tubo#(lf)(perfil de poço)", "Caixa Tubo#(lf)(Engenharia)",
+    "Lacre", "Etiqueta (20kg)", "Etiqueta (Mídia)",
+    "Etiqueta Tubo#(lf)(perfil de poço)", "Etiqueta Tubo#(lf)(Engenharia)",
+    "Lançamento de etiqueta/Registro OS", "Observação"
+}),
+
+ReordenarColunas = Table.ReorderColumns(RemoverColunasFinais, {
+    "Período#(lf)faturamento", "Situação", "Contrato",
+    "Descrição da atividade", "Item", "Aplicação",
+    "Código da#(lf)solicitação", "Chave#(lf)solicitante",
+    "Gerência solicitante", "Qtd.#(lf)Solicitada", "Qtd.#(lf)Atendida",
+    "Código OS", "Data solicitação", "Prazo#(lf)aplicação",
+    "D. abertura", "D. fechamento", "Prazo combinado",
+    "Obs. Sigla", "Localidade", "Comentários", "Observações"
+}),
+
+DefinirTiposRestantes = Table.TransformColumnTypes(ReordenarColunas, {
+    {"Descrição da atividade", type text},
+    {"Item", type text},
+    {"Aplicação", type text},
+    {"Código da#(lf)solicitação", type text},
+    {"Chave#(lf)solicitante", type text},
+    {"Gerência solicitante", type text},
+    {"Código OS", type text},
+    {"Qtd.#(lf)Atendida", Int64.Type},
+    {"Qtd.#(lf)Solicitada", Int64.Type},
+    {"Data solicitação", type datetime},
+    {"Prazo#(lf)aplicação", type datetime},
+    {"D. abertura", type datetime},
+    {"D. fechamento", type datetime},
+    {"Prazo combinado", type datetime},
+    {"Obs. Sigla", type text},
+    {"Localidade", type text},
+    {"Comentários", type text},
+    {"Observações", type text}
+}),
+
+// ═══════════════════════════════════════════════════════════════════
+// SEÇÃO 5 — TRANSFORMAÇÕES DE TEXTO E ORDENAÇÃO
+// ═══════════════════════════════════════════════════════════════════
+TransformarTexto = Table.TransformColumns(DefinirTiposRestantes, {
+    {"Descrição da atividade", Text.Upper, type text},
+    {"Localidade", each Text.Trim(Text.Clean(Text.Upper(_))), type text}
+}),
+
+OrdenarContrato = Table.Sort(TransformarTexto, {{"Contrato", Order.Ascending}}),
+
+OrdenarContratoBuffer = Table.Buffer(OrdenarContrato),
+
+// ═══════════════════════════════════════════════════════════════════
+// SEÇÃO 6 — ENRIQUECER COM LOCALIDADE E GALPÃO
+// ═══════════════════════════════════════════════════════════════════
+MesclarLocalidade = Table.NestedJoin(
+    OrdenarContratoBuffer, {"Localidade"},
+    RefLocalidadeComEndereco, {"Localidade"},
+    "Localidade Com Endereço", JoinKind.LeftOuter
+),
+
+ExpandirLocalidade = Table.ExpandTableColumn(
+    MesclarLocalidade, "Localidade Com Endereço",
+    {"Centro", "Município", "UF"},
+    {"Centro", "Município", "UF"}
+),
+
+AdicionarValidarGalpao = Table.AddColumn(ExpandirLocalidade, "ValidarGalpao", each
+    if List.Contains({
+        "DEVOLUCAO DE EMPRESTIMO",
+        "COLETA DE EMBALAGEM",
+        "COLETA DE ITEM AVULSO",
+        "ENTREGA DE EMBALAGEM EXPRESSO",
+        "ENTREGA DE EMBALAGEM NORMAL",
+        "ENTREGA DE ITEM EXPRESSO",
+        "ENTREGA DE ITEM NORMAL"
+    }, Text.Upper(Text.Trim([Descrição da atividade])))
+    then "Verdadeiro"
+    else "Falso"
+),
+
+AdicionarObsSigla = Table.AddColumn(AdicionarValidarGalpao, "ObsSiglaGalpao", each
+    if [Obs. Sigla] = "GRJ" then "IRON-RJ"
+    else if [Obs. Sigla] = "GES" then "IRON-ES"
+    else if [Obs. Sigla] = "GSP" then "IRON-SP"
+    else if [Obs. Sigla] = "GBA" then "PA-BA"
+    else null
+),
+
+MesclarUFGalpao = Table.NestedJoin(
+    AdicionarObsSigla, {"UF"},
+    RefValidUFGalpao, {"UF"},
+    "validUFGalpao", JoinKind.LeftOuter
+),
+
+ExpandirUFGalpao = Table.ExpandTableColumn(
+    MesclarUFGalpao, "validUFGalpao",
+    {"Contrato"}, {"Contrato.1"}
+),
+
+AdicionarGalpao = Table.AddColumn(ExpandirUFGalpao, "Galpão", each
+    if [ValidarGalpao] = "Falso" then "N/A"
+    else if [ValidarGalpao] = "Verdadeiro" then [Contrato.1]
+    else null
+),
+
+MesclarEndGalpao = Table.NestedJoin(
+    AdicionarGalpao, {"Galpão"},
+    RefValEnderecoGalpao, {"Galpãp"},
+    "valEnderecoGalpao", JoinKind.LeftOuter
+),
+
+ExpandirEndGalpao = Table.ExpandTableColumn(
+    MesclarEndGalpao, "valEnderecoGalpao",
+    {"Galpãp_Cidade", "Galpãp_UF"},
+    {"Galpãp_Cidade", "Galpãp_UF"}
+),
+
+// ═══════════════════════════════════════════════════════════════════
+// SEÇÃO 7 — CÁLCULO DE DUPLICATAS (FDM)
+// ═══════════════════════════════════════════════════════════════════
+AdicionarColunaConcatenada = Table.AddColumn(ExpandirEndGalpao, "ColunaConcatenadaCalculoFDN", each
+    [Descrição da atividade] & "/" & [#"Código da#(lf)solicitação"] & "/" & [Código OS]
+),
+
+AdicionarIndice = Table.AddIndexColumn(AdicionarColunaConcatenada, "Indice", 0, 1, Int64.Type),
+
+AdicionarIndiceBuffer = Table.Buffer(AdicionarIndice),
+
+PrimeiraOcorrencia = Table.Group(
+    AdicionarIndiceBuffer,
+    {"ColunaConcatenadaCalculoFDN"},
+    {{"IndiceMinimo", each List.Min([Indice]), Int64.Type}}
+),
+
+PrimeiraOcorrenciaBuffer = Table.Buffer(PrimeiraOcorrencia),
+
+MesclarPrimeiraOcorrencia = Table.NestedJoin(
+    AdicionarIndiceBuffer, {"ColunaConcatenadaCalculoFDN"},
+    PrimeiraOcorrenciaBuffer, {"ColunaConcatenadaCalculoFDN"},
+    "PrimeiraOc", JoinKind.LeftOuter
+),
+
+ExpandirIndiceMinimo = Table.ExpandTableColumn(
+    MesclarPrimeiraOcorrencia, "PrimeiraOc",
+    {"IndiceMinimo"}, {"IndiceMinimo"}
+),
+
+AdicionarCalculoFDM = Table.AddColumn(ExpandirIndiceMinimo, "CalculoFDM", each
+    if [Indice] = [IndiceMinimo] then "N" else "S"
+),
+
+RemoverAuxiliares = Table.RemoveColumns(AdicionarCalculoFDM, {"Indice", "IndiceMinimo"}),
+
+// ═══════════════════════════════════════════════════════════════════
+// SEÇÃO 8 — REFERÊNCIAS DE PRAZO, GRUPO E CONTRATO
+// ═══════════════════════════════════════════════════════════════════
+MesclarRefPrazoFDM = Table.NestedJoin(
+    RemoverAuxiliares, {"Descrição da atividade"},
+    RefTabRefPrazoFDM, {"Atividade do painel"},
+    "tabRefPrazoFDM", JoinKind.LeftOuter
+),
+
+ExpandirRefPrazoFDM = Table.ExpandTableColumn(
+    MesclarRefPrazoFDM, "tabRefPrazoFDM",
+    {"Ref. FDM", "Ref. QExec", "Ref. prazo"},
+    {"Ref. FDM", "Ref. QExec", "Ref. prazo"}
+),
+
+AdicionarChaveMunicipioUF = Table.AddColumn(ExpandirRefPrazoFDM, "codContDataMuniUF", each
+    [Município] & "\" & [UF]
+),
+
+MesclarGrupoMunicipio = Table.NestedJoin(
+    AdicionarChaveMunicipioUF, {"codContDataMuniUF"},
+    RefGrupo, {"codGrupo"},
+    "Grupo", JoinKind.LeftOuter
+),
+
+ExpandirGrupoMunicipio = Table.ExpandTableColumn(
+    MesclarGrupoMunicipio, "Grupo",
+    {"Grupo"}, {"Grupo.1"}
+),
+
+AdicionarChavePrazoContrato = Table.AddColumn(ExpandirGrupoMunicipio, "codPrazoContrato", each
+    [Contrato] & "\" & [Descrição da atividade] & "\" & [Grupo.1]
+),
+
+MesclarPrazoContrato = Table.NestedJoin(
+    AdicionarChavePrazoContrato, {"codPrazoContrato"},
+    RefTabelaPrazoContrato, {"codPrazoContrato"},
+    "tabelaPrazoContrato", JoinKind.LeftOuter
+),
+
+ExpandirPrazoContrato = Table.ExpandTableColumn(
+    MesclarPrazoContrato, "tabelaPrazoContrato",
+    {"Prazo"}, {"tabelaPrazoContrato.Prazo"}
+),
+
+// ═══════════════════════════════════════════════════════════════════
+// SEÇÃO 9 — SEPARAÇÃO DE DATA/HORA
+// ═══════════════════════════════════════════════════════════════════
+AdicionarDataHoraSeparadas = Table.AddColumn(ExpandirPrazoContrato, "DataHoraAux", each
+    [
+        #"Data Abertura" = DateTime.Date([D. abertura]),
+        #"Hora Abertura" = DateTime.Time([D. abertura]),
+        #"Data Fechamento" = DateTime.Date([D. fechamento]),
+        #"Hora Fechamento" = DateTime.Time([D. fechamento])
+    ]
+),
+
+ExpandirDataHoraSeparadas = Table.ExpandRecordColumn(
+    AdicionarDataHoraSeparadas, "DataHoraAux",
+    {"Data Abertura", "Hora Abertura", "Data Fechamento", "Hora Fechamento"},
+    {"Data Abertura", "Hora Abertura", "Data Fechamento", "Hora Fechamento"}
+),
+
+// ═══════════════════════════════════════════════════════════════════
+// SEÇÃO 10 — CLASSIFICAÇÃO FDM E SLA (com tratamento de erro)
+// ═══════════════════════════════════════════════════════════════════
+AdicionarClassificacaoFDM = Table.AddColumn(ExpandirDataHoraSeparadas, "ResultadoFDM", each
+    try
+        fnClassificarFDM(
+            [CalculoFDM], [#"Ref. FDM"], [#"Ref. prazo"],
+            [#"Descrição da atividade"], [Contrato],
+            [Data Abertura], [Hora Abertura],
+            [D. fechamento], [Prazo combinado],
+            [Município], [UF], [Grupo.1],
+            [#"tabelaPrazoContrato.Prazo"], [Aplicação]
+        )
+    otherwise
+        [ Classificacao = null, StatusPrazo = null, Log = "Erro no cálculo — verificar dados da linha; " ],
+    type record
+),
+
+ExpandirClassificacaoFDM = Table.ExpandRecordColumn(
+    AdicionarClassificacaoFDM, "ResultadoFDM",
+    {"Classificacao", "StatusPrazo", "Log"},
+    {"Classificação FDM", "Status Prazo", "LOG SLA"}
+),
+
+// ═══════════════════════════════════════════════════════════════════
+// SEÇÃO 11 — NOVAS COLUNAS: DATA SLA E PRAZO SLA (ADICIONADO NESTA CONVERSA)
+// ═══════════════════════════════════════════════════════════════════
+// "Data SLA": usa fnCalcularDataSLA com duration = Prazo * 8h.
+// NÃO reproduz o tratamento especial do caso 0,5 (janelas de horário).
+AdicionarDataSLA = Table.AddColumn(ExpandirClassificacaoFDM, "Data SLA", each
+    try
+        if [#"tabelaPrazoContrato.Prazo"] = null or [Data Abertura] = null or [Hora Abertura] = null then
+            null
+        else
+            fnCalcularDataSLA(
+                [Data Abertura],
+                [Hora Abertura],
+                #duration(0, [#"tabelaPrazoContrato.Prazo"] * 8, 0, 0)
+            )
+    otherwise null
+),
+
+// "Prazo SLA": aplica a regra de negócio completa (incluindo caso 0,5)
+// via fnCalcularPrazoSLA — resultado oficial do SLA.
+AdicionarPrazoSLA = Table.AddColumn(AdicionarDataSLA, "Prazo SLA", each
+    try
+        if [#"tabelaPrazoContrato.Prazo"] = null or [Data Abertura] = null or [Hora Abertura] = null then
+            null
+        else
+            fnCalcularPrazoSLA(
+                [#"tabelaPrazoContrato.Prazo"],
+                [Data Abertura],
+                [Hora Abertura]
+            )
+    otherwise null
+)
+
+in
+    AdicionarPrazoSLA
+
+6) PENDÊNCIAS / PONTOS ABERTOS PARA A PRÓXIMA SESSÃO
+-----------------------------------------------------------------
+[ ] Confirmar se a coluna "Data SLA" deve replicar o tratamento
+    especial do caso dPrazo = 0,5 (janelas de horário 08-11h / 11-16h /
+    demais), assim como "Prazo SLA" já faz — hoje ela usa apenas o
+    cálculo linear (Prazo * 8h).
+[ ] Confirmar nomes finais das colunas "Data SLA" e "Prazo SLA"
+    (posição no fluxo, nomenclatura, etc.).
+[ ] Decidir se a função fnCalcularPrazoSLA também deve ser extraída/
+    padronizada no lado VBA (módulo fncGeral), unificando a lógica
+    hoje duplicada entre Planilha7.analiseDeDados() e
+    subDadosSaidaExportacao, ou se a intenção é migrar totalmente
+    para Power Query e desativar a lógica VBA equivalente.
+[ ] Validar (ex.: com o agente Python, simulando os cálculos) os
+    resultados de fnCalcularDataSLA/fnCalcularPrazoSLA com casos de
+    teste reais antes de aplicar em produção.
+[ ] Revisar se há necessidade de tratar feriados dentro de
+    fnCalcularDataSLA (a versão VBA original tinha pesquisar_EFeriado;
+    a versão M fornecida pelo usuário não trata feriados, apenas
+    fins de semana via Date.DayOfWeek).
+
+7) PRÓXIMOS PASSOS SUGERIDOS
+-----------------------------------------------------------------
+1. Revisar as pendências da seção 6 com a equipe/usuário.
+2. Testar a consulta M completa no Power Query com uma amostra real
+   de dados do Painel de Controle.
+3. Validar resultados de "Data SLA" e "Prazo SLA" comparando com o
+   cálculo VBA legado (calcular_dataSLA / Select Case dPrazo).
+4. Se aprovado, decidir sobre descontinuar a lógica duplicada em VBA
+   ou mantê-la como fallback.
+
+═══════════════════════════════════════════════════════════════════
+FIM DO RESUMO — Gerado pelo ChatPetrobras (claude-sonnet-5, high)
+═══════════════════════════════════════════════════════════════════
+
+Copie o bloco acima e salve como resumo_projeto_medicao_13-08-2026.txt (ou nome de sua preferência). Assim, quando você retomar, basta colar este conteúdo novamente aqui no chat (ou parte relevante dele) para eu continuar exatamente de onde paramos.
+
+Posso gerar também uma versão desse resumo em .docx formatado (via agente de documentos), caso prefira um arquivo mais estruturado.
+
+Posso ajustar a Seção 11 já incorporando o tratamento do caso 0,5 na coluna "Data SLA", se você confirmar que é isso que deseja.
+
+Posso revisar a questão de feriados em fnCalcularDataSLA, caso queira alinhar com a lógica VBA original.

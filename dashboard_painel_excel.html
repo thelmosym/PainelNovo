@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Controle MemoriaPetrobras V6.xlsm - Excel</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            excel: {
+              ribbon: '#107c41',
+              darkRibbon: '#0b5a2f',
+              formulaBg: '#f8fafc',
+              cellBorder: '#e2e8f0',
+              cellActive: '#107c41',
+              gridBg: '#ffffff',
+              hoverRow: '#f1f5f9'
+            },
+            petro: {
+              green: '#008542',
+              darkGreen: '#00592c',
+              amber: '#d97706',
+              amberLight: '#fef3c7',
+              red: '#dc2626',
+              redLight: '#fee2e2',
+              slate: '#334155'
+            }
+          },
+          fontFamily: {
+            sans: ['Segoe UI', 'Aptos', 'Calibri', 'system-ui', 'sans-serif'],
+            mono: ['Consolas', 'Courier New', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Estilização estrita imitando a interface e as células do Excel Desktop */
+    body {
+      font-family: 'Segoe UI', 'Aptos', -apple-system, sans-serif;
+      background-color: #e2e8f0;
+      color: #1e293b;
+      overflow-x: hidden;
+      user-select: none;
+    }
+
+    /* Scrollbars finas de aplicação desktop */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Controles de formulário estilo Excel Dropdown / Form Control */
+    .excel-input {
+      background-color: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #1e293b;
+      padding: 3px 6px;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .excel-input:focus {
+      border-color: #107c41;
+      box-shadow: 0 0 0 1px #107c41;
+    }
+
+    .excel-select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.45rem center;
+      background-size: 9px;
+      appearance: none;
+      padding-right: 18px;
+    }
+
+    /* Linha totalizadora clássica de planilha (borda superior simples, borda inferior dupla) */
+    .excel-total-row {
+      border-top: 1px solid #64748b;
+      border-bottom: 3px double #334155;
+      background-color: #f8fafc;
+      font-weight: 700;
+    }
+
+    /* Simulação de células de planilha nas margens de auditoria */
+    .sheet-grid td, .sheet-grid th {
+      border-right: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+  </style>
+</head>
+<body class="h-screen w-screen flex flex-col bg-slate-200">
+
+  <!-- ======================================================== -->
+  <!-- 1. MOCK SUPERIOR DO EXCEL DESKTOP (BARRA DE TÍTULO & SIMULADOR) -->
+  <!-- ======================================================== -->
+  <header class="bg-[#107c41] text-white flex items-center justify-between px-3 py-1 text-xs shrink-0 select-none">
+    <div class="flex items-center space-x-2">
+      <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-200"></i>
+      <span class="font-semibold text-xs tracking-wide">Painel de Controle MemoriaPetrobras V6.xlsm - Excel</span>
+      <span class="text-emerald-200/70 text-[11px] hidden sm:inline">• [Modo Operacional Ativo]</span>
+    </div>
+
+    <!-- Seletor de Simulação dos 8 Estados de Operação -->
+    <div class="flex items-center space-x-2 bg-emerald-900/60 px-2.5 py-0.5 rounded border border-emerald-700">
+      <span class="text-[10px] text-emerald-200 uppercase font-bold tracking-wider hidden sm:inline">Cenário Operacional:</span>
+      <select id="stateSelector" onchange="simulateState(this.value)" class="bg-white text-slate-800 text-[11px] font-medium py-0.5 px-2 rounded border border-slate-300 focus:outline-none cursor-pointer">
+        <option value="ready">1. Inicial (Dados Carregados)</option>
+        <option value="updating">2. Atualização em Andamento (Power Query M)</option>
+        <option value="success">3. Atualização Concluída com Sucesso</option>
+        <option value="partial_error">4. Atualização com Erros Parciais</option>
+        <option value="failed">5. Falha de Atualização (VBA / Fonte Bloqueada)</option>
+        <option value="generating">6. Geração de Arquivos em Andamento</option>
+        <option value="files_done">7. Arquivos Gerados com Sucesso</option>
+        <option value="files_incomplete">8. Arquivo Não Gerado / Pendente</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- BARRA DE FÓRMULA DO EXCEL (Garante familiaridade instantânea de pasta de trabalho) -->
+  <div class="bg-white border-b border-slate-300 px-3 py-1 flex items-center space-x-2 text-xs shrink-0">
+    <div class="w-14 px-2 py-0.5 bg-slate-100 border border-slate-300 font-mono text-[11px] font-semibold text-slate-700 text-center rounded-xs">
+      B2
+    </div>
+    <div class="text-slate-400 font-serif italic text-xs select-none">fx</div>
+    <div class="flex-1 px-2 py-0.5 bg-slate-50 border border-slate-200 font-mono text-[11px] text-slate-600 truncate rounded-xs">
+      ="Período de medição: " & TEXTO(DATA(2026;7;26);"dd/mm/aaaa") & " a " & TEXTO(DATA(2026;8;25);"dd/mm/aaaa")
+    </div>
+  </div>
+
+  <!-- BANNER DINÂMICO DE EXECUÇÃO POWER QUERY / STATUS (Aparece em atualizações e erros) -->
+  <div id="dynamicStatusBanner" class="hidden px-4 py-1.5 border-b text-xs flex items-center justify-between font-medium shrink-0">
+    <div class="flex items-center space-x-2" id="bannerMessage">
+      <!-- Injetado dinamicamente -->
+    </div>
+    <div class="text-[11px] opacity-80" id="bannerTimer">Executando...</div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 2. ÁREA DE TRABALHO HORIZONTAL DA ABA 'PAINEL' -->
+  <!-- ======================================================== -->
+  <div class="flex-1 overflow-y-auto p-2.5 md:p-3 space-y-2 bg-[#f4f6f8]">
+
+    <!-- LINHAS 1 A 3: CABEÇALHO HORIZONTAL INTEGRADO DA PLANILHA -->
+    <div class="bg-white rounded border border-slate-300 shadow-xs p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <!-- Título e Subtítulo Institucionais -->
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded bg-[#008542] text-white flex items-center justify-center font-bold text-base shadow-xs shrink-0">
+          BR
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-base font-bold text-slate-900 tracking-tight leading-none">Painel de Controle</h1>
+            <span class="text-slate-300">|</span>
+            <span class="text-sm font-semibold text-[#008542] leading-none">Memória Petrobras</span>
+            <span class="text-[10px] font-mono font-semibold px-1.5 py-0.2 bg-slate-100 text-slate-600 border border-slate-300 rounded">V6.xlsm</span>
+          </div>
+          <p class="text-[11px] text-slate-600 mt-1 flex flex-wrap items-center gap-x-2">
+            <span>Período de medição: <strong class="text-slate-900 font-semibold bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200">26/07/2026 a 25/08/2026</strong></span>
+            <span class="text-slate-300">•</span>
+            <span class="text-slate-500">Regra contratual: 26 do mês anterior a 25 do mês vigente</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Conexão Power Query & Timestamp de Atualização -->
+      <div class="flex items-center space-x-3 text-xs border-t md:border-t-0 pt-2 md:pt-0">
+        <div class="flex items-center space-x-2 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded">
+          <i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i>
+          <div>
+            <div class="text-[9px] text-slate-400 uppercase font-bold leading-none">Última atualização</div>
+            <div class="font-mono text-[11px] font-semibold text-slate-700 leading-tight" id="lblTimestamp">22/09/2026 22:59</div>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-2 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded" id="boxConexao">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" id="pingConexao"></span>
+          <div>
+            <div class="text-[9px] text-slate-400 uppercase font-bold leading-none">Conexão Power Query</div>
+            <div class="font-medium text-[11px] text-slate-700 leading-tight" id="lblConexao">4 fontes conectadas</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LINHAS 4 A 6: BARRA DE FERRAMENTAS / BOTÕES OPERACIONAIS E FILTROS -->
+    <div class="bg-white rounded border border-slate-300 shadow-xs p-2.5 space-y-2">
+      <!-- Linha Superior: Botões de Ação com Estilo Excel ActiveX / Modern Forms -->
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <!-- Botão Atualizar Painel -->
+          <button id="btnAtualizar" onclick="runRefreshProcess()" class="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#008542] hover:bg-[#007038] active:bg-[#00592c] text-white text-xs font-semibold rounded border border-emerald-800 shadow-xs transition-colors">
+            <i data-lucide="refresh-cw" id="iconAtualizar" class="w-3.5 h-3.5 text-white"></i>
+            <span id="textAtualizar">Atualizar painel</span>
+          </button>
+
+          <!-- Botão Gerar Arquivos -->
+          <button id="btnGerar" onclick="runFileGeneration()" class="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-white text-xs font-semibold rounded border border-slate-900 shadow-xs transition-colors">
+            <i data-lucide="file-up" id="iconGerar" class="w-3.5 h-3.5 text-amber-300"></i>
+            <span id="textGerar">Gerar arquivos (4)</span>
+          </button>
+
+          <span class="h-4 w-px bg-slate-300 mx-1"></span>
+
+          <!-- Botão Abrir Pasta de Saída -->
+          <button onclick="openOutputDirectory()" class="inline-flex items-center space-x-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded border border-slate-300 shadow-xs transition-colors">
+            <i data-lucide="folder-open" class="w-3.5 h-3.5 text-slate-500"></i>
+            <span>Abrir pasta de saída</span>
+          </button>
+
+          <!-- Botão Ver Detalhes dos Erros -->
+          <button id="btnErros" onclick="openAuditModal()" class="inline-flex items-center space-x-1.5 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-medium rounded border border-amber-300 shadow-xs transition-colors">
+            <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-600"></i>
+            <span>Ver detalhes dos erros</span>
+            <span class="ml-1 px-1.5 py-0.2 bg-amber-200 text-amber-900 rounded-full font-bold text-[10px]" id="badgeErrosCount">18</span>
+          </button>
+        </div>
+
+        <!-- Indicador de Progresso Power Query Inline -->
+        <div id="inlineProgressBox" class="hidden flex items-center space-x-2 text-slate-700 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded">
+          <div class="w-24 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+            <div id="inlineProgressBar" class="bg-[#008542] h-1.5 transition-all duration-200" style="width: 15%"></div>
+          </div>
+          <span id="inlineProgressLabel" class="text-[11px] font-mono font-medium text-slate-700">Atualizando consulta 14 de 91</span>
+        </div>
+      </div>
+
+      <!-- Linha Inferior: Controles de Filtros Rápidos (Slicers compactos horizontais de Excel) -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-0.5">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Período de Medição</label>
+          <select id="filtroPeriodo" class="excel-input excel-select w-full">
+            <option selected>Jul/Ago 2026 (26/07 a 25/08) [Vigente]</option>
+            <option>Jun/Jul 2026 (26/06 a 25/07) [Fechado]</option>
+            <option>Mai/Jun 2026 (26/05 a 25/06) [Histórico]</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Contrato</label>
+          <select id="filtroContrato" onchange="filterContracts()" class="excel-input excel-select w-full">
+            <option value="ALL" selected>(Todos os Contratos - 4)</option>
+            <option value="PA-LT2">PA-LT2 (Paulínia)</option>
+            <option value="IRON-LT1-RJ">IRON-LT1-RJ (Rio de Janeiro)</option>
+            <option value="IRON-LT1-SP">IRON-LT1-SP (Santos)</option>
+            <option value="IRON-LT1-ES">IRON-LT1-ES (Espírito Santo)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Situação Operacional</label>
+          <select id="filtroSituacao" onchange="filterContracts()" class="excel-input excel-select w-full">
+            <option value="ALL" selected>(Todas as Situações)</option>
+            <option value="VALIDO">No Prazo / Conforme</option>
+            <option value="FORA_PRAZO">Fora do Prazo SLA</option>
+            <option value="DIVERGENTE">Com Divergência</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Classificação FDM</label>
+          <select class="excel-input excel-select w-full">
+            <option selected>(Todas as FDM)</option>
+            <option>FDM-01 Regular Programado</option>
+            <option>FDM-02 Urgência Operacional</option>
+            <option>FDM-03 Contingência / Spot</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Atividade</label>
+          <select class="excel-input excel-select w-full">
+            <option selected>(Todas as Atividades)</option>
+            <option>Transporte Rodoviário Dedicado</option>
+            <option>Armazenagem e Transbordo</option>
+            <option>Movimentação Portuária</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Localidade / Base</label>
+          <select class="excel-input excel-select w-full">
+            <option selected>(Todas as Localidades)</option>
+            <option>Paulínia (REPLAN)</option>
+            <option>Macaé (BASC / UTGCA)</option>
+            <option>Santos / Cubatão (RPBC)</option>
+            <option>Linhares / São Mateus</option>
+            <option>[!] Não Encontradas / Sem De-Para</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- LINHAS 8 A 12: FAIXA HORIZONTAL DE CARDS DE INDICADORES (KPIS) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+      
+      <!-- Card 1: Total de Registros -->
+      <div class="bg-white border border-slate-300 rounded p-2.5 shadow-xs flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-500">
+          <span class="text-[10px] font-bold uppercase tracking-wider">Total de Registros</span>
+          <i data-lucide="layers" class="w-3.5 h-3.5 text-slate-400"></i>
+        </div>
+        <div class="my-1">
+          <div class="text-xl font-bold font-mono text-slate-900 tracking-tight" id="kpiTotal">12.840</div>
+          <div class="text-[10px] text-slate-500">Linhas consolidadas</div>
+        </div>
+        <div class="pt-1 border-t border-slate-100 text-[10px] font-medium text-emerald-700 flex items-center">
+          <i data-lucide="check" class="w-3 h-3 mr-1 text-emerald-600"></i>
+          <span>100% monitoramentos lidos</span>
+        </div>
+      </div>
+
+      <!-- Card 2: Quantidade Solicitada -->
+      <div class="bg-white border border-slate-300 rounded p-2.5 shadow-xs flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-500">
+          <span class="text-[10px] font-bold uppercase tracking-wider">Qtd. Solicitada</span>
+          <i data-lucide="shopping-cart" class="w-3.5 h-3.5 text-slate-400"></i>
+        </div>
+        <div class="my-1">
+          <div class="text-xl font-bold font-mono text-slate-900 tracking-tight" id="kpiSolicitada">15.420</div>
+          <div class="text-[10px] text-slate-500">Demandado em OSs</div>
+        </div>
+        <div class="pt-1 border-t border-slate-100 text-[10px] text-slate-500">
+          <span>Unidade base: Ton/Viagem</span>
+        </div>
+      </div>
+
+      <!-- Card 3: Quantidade Atendida -->
+      <div class="bg-white border border-slate-300 rounded p-2.5 shadow-xs flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-500">
+          <span class="text-[10px] font-bold uppercase tracking-wider">Qtd. Atendida</span>
+          <i data-lucide="check-check" class="w-3.5 h-3.5 text-emerald-600"></i>
+        </div>
+        <div class="my-1">
+          <div class="text-xl font-bold font-mono text-emerald-800 tracking-tight" id="kpiAtendida">14.980</div>
+          <div class="text-[10px] text-slate-500">Recebido e comprovado</div>
+        </div>
+        <div class="pt-1 border-t border-slate-100 text-[10px] font-semibold text-emerald-700">
+          <span>97,1% de cumprimento</span>
+        </div>
+      </div>
+
+      <!-- Card 4: QExec Total -->
+      <div class="bg-white border border-slate-300 rounded p-2.5 shadow-xs flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-500">
+          <span class="text-[10px] font-bold uppercase tracking-wider">QExec Total</span>
+          <i data-lucide="calculator" class="w-3.5 h-3.5 text-slate-400"></i>
+        </div>
+        <div class="my-1">
+          <div class="text-xl font-bold font-mono text-[#00592c] tracking-tight" id="kpiQExec">14.250</div>
+          <div class="text-[10px] text-slate-500">Medição faturável</div>
+        </div>
+        <div class="pt-1 border-t border-slate-100 text-[10px] text-slate-500">
+          <span>Base para aba [MC]</span>
+        </div>
+      </div>
+
+      <!-- Card 5: Contratos Processados -->
+      <div class="bg-white border border-slate-300 rounded p-2.5 shadow-xs flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-500">
+          <span class="text-[10px] font-bold uppercase tracking-wider">Contratos</span>
+          <i data-lucide="file-check" class="w-3.5 h-3.5 text-slate-400"></i>
+        </div>
+        <div class="my-1">
+          <div class="text-xl font-bold font-mono text-slate-900 tracking-tight" id="kpiContratos">4 de 4</div>
+          <div class="text-[10px] text-slate-500">Bases mapeadas</div>
+        </div>
+        <div class="pt-1 border-t border-slate-100 text-[10px] font-medium text-emerald-700 flex items-center">
+          <i data-lucide="shield-check" class="w-3 h-3 mr-1 text-emerald-600"></i>
+          <span>100% integrados</span>
+        </div>
+      </div>
+
+      <!-- Card 6: Registros Fora do Prazo -->
+      <div class="bg-white border border-amber-300 bg-amber-50/30 rounded p-2.5 shadow-xs flex flex-col justify-between">
+        <div class="flex items-center justify-between text-amber-900">
+          <span class="text-[10px] font-bold uppercase tracking-wider">Fora do Prazo</span>
+          <i data-lucide="clock-alert" class="w-3.5 h-3.5 text-amber-600"></i>
+        </div>
+        <div class="my-1">
+          <div class="text-xl font-bold font-mono text-amber-700 tracking-tight" id="kpiForaPrazo">182</div>
+          <div class="text-[10px] text-amber-900/80">Desvios de SLA contratual</div>
+        </div>
+        <div class="pt-1 border-t border-amber-200 text-[10px] font-bold text-amber-800">
+          <span>1,4% do total de registros</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- GRADE PRINCIPAL HORIZONTAL (LADO A LADO: TABELAS OPERACIONAIS + PAINEL DE ALERTAS) -->
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-2.5">
+      
+      <!-- ============================================== -->
+      <!-- LADO ESQUERDO/CENTRAL: TABELAS RESUMO E ARQUIVOS (8/12 colunas) -->
+      <!-- ============================================== -->
+      <div class="xl:col-span-8 space-y-2.5">
+        
+        <!-- TABELA 1: RESUMO CONSOLIDADO POR CONTRATO -->
+        <div class="bg-white rounded border border-slate-300 shadow-xs">
+          <div class="px-3 py-1.5 bg-slate-100 border-b border-slate-300 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="table" class="w-3.5 h-3.5 text-[#008542]"></i>
+              <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Resumo Consolidado por Contrato</span>
+            </div>
+            <span class="text-[10px] font-mono text-slate-500">Período: 26/07/2026 a 25/08/2026</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse sheet-grid">
+              <thead>
+                <tr class="bg-slate-50 text-slate-600 font-semibold text-[11px]">
+                  <th class="py-1.5 px-3">Contrato</th>
+                  <th class="py-1.5 px-2 text-right">Registros</th>
+                  <th class="py-1.5 px-2 text-right">Qtd. Solicitada</th>
+                  <th class="py-1.5 px-2 text-right">Qtd. Atendida</th>
+                  <th class="py-1.5 px-2 text-right">QExec</th>
+                  <th class="py-1.5 px-2 text-right">No Prazo</th>
+                  <th class="py-1.5 px-2 text-right">Fora Prazo</th>
+                  <th class="py-1.5 px-3 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200" id="tabelaContratosBody">
+                
+                <!-- Linha 1: PA-LT2 -->
+                <tr class="hover:bg-slate-50 transition-colors" data-contrato="PA-LT2">
+                  <td class="py-1.5 px-3 font-semibold text-slate-800 flex items-center space-x-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                    <span>PA-LT2</span>
+                    <span class="text-[10px] text-slate-400 font-normal">(Paulínia)</span>
+                  </td>
+                  <td class="py-1.5 px-2 text-right font-mono">3.420</td>
+                  <td class="py-1.5 px-2 text-right font-mono">4.120</td>
+                  <td class="py-1.5 px-2 text-right font-mono text-slate-800">4.010</td>
+                  <td class="py-1.5 px-2 text-right font-mono font-bold text-slate-900">3.890</td>
+                  <td class="py-1.5 px-2 text-right font-mono text-emerald-700">3.372</td>
+                  <td class="py-1.5 px-2 text-right font-mono text-amber-700 font-semibold">48</td>
+                  <td class="py-1.5 px-3 text-center">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      <i data-lucide="check" class="w-3 h-3 mr-1 text-emerald-600"></i> Pronto
+                    </span>
+                  </td>
+                </tr>
+
+                <!-- Linha 2: IRON-LT1-RJ -->
+                <tr class="hover:bg-slate-50 transition-colors" data-contrato="IRON-LT1-RJ">
+                  <td class="py-1.5 px-3 font-semibold text-slate-800 flex items-center space-x-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                    <span>IRON-LT1-RJ</span>
+                    <span class="text-[10px] text-slate-400 font-normal">(Macaé/RJ)</span>
+                  </td>
+                  <td class="py-1.5 px-2 text-right font-mono">4.910</td>
+                  <td class="py-1.5 px-2 text-right font-mono">5.890</td>
+                  <td class="py-1.5 px-2 text-right font-mono text-slate-800">5.750</td>
+                  <td class="py-1.5 px-2 text-right font-mono font-bold text-slate-900">5.460</td>
+                  <td class="py-1.5 px-2 text-right font-mono text-emerald-700">4.832</td>
+                  <td class="py-1.5 px-2 text-right font-mono text-amber-700 font-semibold">78</td>
+                  <td class="py-1.5 px-3 text-center">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      <i data-lucide="check" class="w-3 h-3 mr-1 text-emerald-600"></i> Pronto
+                    </span>
+                  </td>
+                </tr>
+
+                <!-- Linha 3: IRON-LT1-SP -->
+                <tr class="hover:bg-slate-50 transition-colors" data-contrato="IRON-LT1-SP">
+                  <td class="py-1.5 px-3 font-semibold text-slate-800 flex items-center space-x-1.5">
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span>IRON-LT1-SP</span>
+                    <span class="text-[10px] text-slate-400 font-normal">(Santos/SP)</span>
+                  </td>
+                  <td class="py-1.5 px-2 text-right font-mono">2.610</td>
+                  <td class="py-1.5 px-2 text-right font-mono">3.150</td>
+                  <td class="py-1.5 px-2 text-right font-mono text-slate-800">3.040</td>
+                  <td class="py-1.5 px-2 text-right font-mono font-bold text-slate-900">2.880</td>
+                  <td class="py-1.5 px-2 text-right font-mono text-emerald-700">2.574</td>
+                  <td class="py-1.5 px-2 text-right font-mono text-amber-700 font-semibold">36</td>
+                  <td class="py-1.5 px-3 text-center">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-900 border border-amber-300">
+                      <i data-lucide="alert-circle" class="w-3 h-3 mr-1 text-amber-700"></i> Atenção (Diverg.)
+                    </span>
+                  </td>
+                </tr>
+
+                <!-- Linha 4: IRON-LT1-ES -->
+                <tr class="hover:bg-slate-50 transition-colors" data-contrato="IRON-LT1-ES">
+                  <td class="py-1.5 px-3 font-semibold text-slate-800 flex items-center space-x-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                    <span>IRON-LT1-ES</span>
+                    <span class="text-[10px] text-slate-400 font-normal">(Linhares/ES)</span>
+                  </td>
+                  <td class="py-1.5 px-2 text-right font-mono">1.900</td>
+                  <td class="py-1.5 px-2 text-right font-mono">2.260</td>
+                  <td class="py-1.5 px-2 text-right font-mono text-slate-800">2.180</td>
+                  <td class="py-1.5 px-2 text-right font-mono font-bold text-slate-900">2.020</td>
+                  <td class="py-1.5 px-2 text-right font-mono text-emerald-700">1.880</td>
+                  <td class="py-1.5 px-2 text-right font-mono text-amber-700 font-semibold">20</td>
+                  <td class="py-1.5 px-3 text-center">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      <i data-lucide="check" class="w-3 h-3 mr-1 text-emerald-600"></i> Pronto
+                    </span>
+                  </td>
+                </tr>
+
+              </tbody>
+
+              <!-- Linha Totalizadora Clássica do Excel (Dupla linha inferior) -->
+              <tfoot>
+                <tr class="excel-total-row text-slate-900">
+                  <td class="py-2 px-3 uppercase text-[11px]">TOTAL GERAL</td>
+                  <td class="py-2 px-2 text-right font-mono">12.840</td>
+                  <td class="py-2 px-2 text-right font-mono">15.420</td>
+                  <td class="py-2 px-2 text-right font-mono">14.980</td>
+                  <td class="py-2 px-2 text-right font-mono font-bold text-[#00592c]">14.250</td>
+                  <td class="py-2 px-2 text-right font-mono text-emerald-800">12.658</td>
+                  <td class="py-2 px-2 text-right font-mono text-amber-800">182</td>
+                  <td class="py-2 px-3 text-center text-[10px] text-slate-600 font-semibold">4 Contratos</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- TABELA 2: ARQUIVOS DE SAÍDA GERADOS (MEMÓRIAS DE CÁLCULO) -->
+        <div class="bg-white rounded border border-slate-300 shadow-xs">
+          <div class="px-3 py-1.5 bg-slate-100 border-b border-slate-300 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-[#008542]"></i>
+              <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Arquivos de Memória de Cálculo Gerados</span>
+            </div>
+            <div class="flex items-center space-x-2 text-[10px] text-slate-500">
+              <span>Abas obrigatórias: <strong class="font-mono text-slate-700">MC, ARM, DADOS, FRETE</strong></span>
+              <span>•</span>
+              <span class="font-mono bg-slate-200 px-1 py-0.2 rounded text-slate-700">..\Saida_Final\</span>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse sheet-grid">
+              <thead>
+                <tr class="bg-slate-50 text-slate-600 font-semibold text-[11px]">
+                  <th class="py-1.5 px-3">Contrato</th>
+                  <th class="py-1.5 px-3">Nome Amigável do Arquivo</th>
+                  <th class="py-1.5 px-3">Data / Hora Geração</th>
+                  <th class="py-1.5 px-3 text-center">Status</th>
+                  <th class="py-1.5 px-3 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200" id="tabelaArquivosBody">
+                
+                <!-- Arquivo 1 -->
+                <tr class="hover:bg-slate-50 transition-colors" id="fileRow-PA-LT2">
+                  <td class="py-1.5 px-3 font-bold text-slate-800">PA-LT2</td>
+                  <td class="py-1.5 px-3">
+                    <div class="font-semibold text-slate-800 flex items-center space-x-1.5">
+                      <i data-lucide="file-check-2" class="w-3.5 h-3.5 text-emerald-700 shrink-0"></i>
+                      <span>MC Paulínia Lote 2 - 2026-08.xlsx</span>
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-mono mt-0.5" title="Nome técnico de arquivo gerado">
+                      MC_PA-LT2_20260726_20260825_REV01.xlsm (3.4 MB)
+                    </div>
+                  </td>
+                  <td class="py-1.5 px-3 font-mono text-slate-600">22/09/2026 22:58</td>
+                  <td class="py-1.5 px-3 text-center">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      <i data-lucide="check" class="w-3 h-3 mr-1 text-emerald-600"></i> Gerado com sucesso
+                    </span>
+                  </td>
+                  <td class="py-1.5 px-3 text-right">
+                    <button onclick="openFileAction('MC_PA-LT2_20260726_20260825_REV01.xlsm')" class="px-2 py-0.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded text-[11px] font-medium shadow-2xs">
+                      Abrir arquivo
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Arquivo 2 -->
+                <tr class="hover:bg-slate-50 transition-colors" id="fileRow-IRON-LT1-RJ">
+                  <td class="py-1.5 px-3 font-bold text-slate-800">IRON-LT1-RJ</td>
+                  <td class="py-1.5 px-3">
+                    <div class="font-semibold text-slate-800 flex items-center space-x-1.5">
+                      <i data-lucide="file-check-2" class="w-3.5 h-3.5 text-emerald-700 shrink-0"></i>
+                      <span>MC Rio de Janeiro Lote 1 - 2026-08.xlsx</span>
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-mono mt-0.5" title="Nome técnico de arquivo gerado">
+                      MC_IRON-LT1-RJ_20260726_20260825_REV01.xlsm (4.8 MB)
+                    </div>
+                  </td>
+                  <td class="py-1.5 px-3 font-mono text-slate-600">22/09/2026 22:58</td>
+                  <td class="py-1.5 px-3 text-center">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      <i data-lucide="check" class="w-3 h-3 mr-1 text-emerald-600"></i> Gerado com sucesso
+                    </span>
+                  </td>
+                  <td class="py-1.5 px-3 text-right">
+                    <button onclick="openFileAction('MC_IRON-LT1-RJ_20260726_20260825_REV01.xlsm')" class="px-2 py-0.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded text-[11px] font-medium shadow-2xs">
+                      Abrir arquivo
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Arquivo 3 -->
+                <tr class="hover:bg-slate-50 transition-colors" id="fileRow-IRON-LT1-SP">
+                  <td class="py-1.5 px-3 font-bold text-slate-800">IRON-LT1-SP</td>
+                  <td class="py-1.5 px-3">
+                    <div class="font-semibold text-slate-800 flex items-center space-x-1.5">
+                      <i data-lucide="file-check-2" class="w-3.5 h-3.5 text-emerald-700 shrink-0"></i>
+                      <span>MC Santos Lote 1 - 2026-08.xlsx</span>
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-mono mt-0.5" title="Nome técnico de arquivo gerado">
+                      MC_IRON-LT1-SP_20260726_20260825_REV01.xlsm (2.9 MB)
+                    </div>
+                  </td>
+                  <td class="py-1.5 px-3 font-mono text-slate-600">22/09/2026 22:59</td>
+                  <td class="py-1.5 px-3 text-center">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      <i data-lucide="check" class="w-3 h-3 mr-1 text-emerald-600"></i> Gerado com sucesso
+                    </span>
+                  </td>
+                  <td class="py-1.5 px-3 text-right">
+                    <button onclick="openFileAction('MC_IRON-LT1-SP_20260726_20260825_REV01.xlsm')" class="px-2 py-0.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded text-[11px] font-medium shadow-2xs">
+                      Abrir arquivo
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Arquivo 4 (com capacidade de simulação de pendência) -->
+                <tr class="hover:bg-slate-50 transition-colors" id="fileRow-IRON-LT1-ES">
+                  <td class="py-1.5 px-3 font-bold text-slate-800">IRON-LT1-ES</td>
+                  <td class="py-1.5 px-3">
+                    <div class="font-semibold text-slate-800 flex items-center space-x-1.5">
+                      <i data-lucide="file-check-2" class="w-3.5 h-3.5 text-emerald-700 shrink-0" id="iconFileES"></i>
+                      <span id="labelFileES">MC Espírito Santo Lote 1 - 2026-08.xlsx</span>
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-mono mt-0.5" id="descFileES" title="Nome técnico de arquivo gerado">
+                      MC_IRON-LT1-ES_20260726_20260825_REV01.xlsm (2.1 MB)
+                    </div>
+                  </td>
+                  <td class="py-1.5 px-3 font-mono text-slate-600" id="dateFileES">22/09/2026 22:59</td>
+                  <td class="py-1.5 px-3 text-center" id="statusCellFileES">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      <i data-lucide="check" class="w-3 h-3 mr-1 text-emerald-600"></i> Gerado com sucesso
+                    </span>
+                  </td>
+                  <td class="py-1.5 px-3 text-right" id="actionCellFileES">
+                    <button onclick="openFileAction('MC_IRON-LT1-ES_20260726_20260825_REV01.xlsm')" class="px-2 py-0.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded text-[11px] font-medium shadow-2xs">
+                      Abrir arquivo
+                    </button>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- LADO DIREITO: PAINEL DE AUDITORIA & ALERTAS (4/12 colunas) -->
+      <!-- ============================================== -->
+      <div class="xl:col-span-4 bg-white rounded border border-slate-300 shadow-xs flex flex-col">
+        <div class="px-3 py-1.5 bg-slate-100 border-b border-slate-300 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-amber-600"></i>
+            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Alertas & Pendências</span>
+          </div>
+          <span class="px-1.5 py-0.2 bg-amber-100 text-amber-900 border border-amber-300 rounded text-[10px] font-bold" id="badgeTotalAlerts">6 Itens</span>
+        </div>
+
+        <div class="p-2 space-y-1.5 flex-1 overflow-y-auto max-h-[500px]" id="alertasContainer">
+          
+          <!-- Alerta 1: Sem OS -->
+          <div class="p-2 rounded border border-amber-300 bg-amber-50/50 flex items-start space-x-2">
+            <span class="px-1 py-0.5 bg-amber-200 text-amber-900 font-mono font-bold text-[9px] rounded shrink-0">SEM_OS</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900">Registros sem Código OS</span>
+                <span class="text-[10px] font-mono font-bold text-amber-900">34 itens</span>
+              </div>
+              <p class="text-[11px] text-slate-600 mt-0.5">Identificados nos monitoramentos de PA-LT2 (22) e IRON-LT1-RJ (12).</p>
+              <button onclick="filterByAlert('SEM_OS')" class="mt-1 text-[10px] text-emerald-800 font-semibold hover:underline">
+                Filtrar na aba DADOS &rarr;
+              </button>
+            </div>
+          </div>
+
+          <!-- Alerta 2: Localidades não encontradas -->
+          <div class="p-2 rounded border border-red-300 bg-red-50/40 flex items-start space-x-2">
+            <span class="px-1 py-0.5 bg-red-200 text-red-900 font-mono font-bold text-[9px] rounded shrink-0">DE_PARA</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900">Localidades Não Encontradas</span>
+                <span class="text-[10px] font-mono font-bold text-red-800">12 itens</span>
+              </div>
+              <p class="text-[11px] text-slate-600 mt-0.5">Destinos sem correspondência tarifária na aba <strong class="font-mono text-slate-800">FRETE</strong>.</p>
+              <button onclick="openDeParaTab()" class="mt-1 text-[10px] text-red-700 font-semibold hover:underline">
+                Abrir tabela De-Para Localidades &rarr;
+              </button>
+            </div>
+          </div>
+
+          <!-- Alerta 3: Divergência Solicitado x Atendido -->
+          <div class="p-2 rounded border border-slate-300 bg-slate-50 flex items-start space-x-2">
+            <span class="px-1 py-0.5 bg-slate-200 text-slate-700 font-mono font-bold text-[9px] rounded shrink-0">DIVERG</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900">Divergência Solicitado x Atendido</span>
+                <span class="text-[10px] font-mono font-bold text-slate-800">440 itens</span>
+              </div>
+              <p class="text-[11px] text-slate-600 mt-0.5">Diferença de 440 Ton em entregas parciais ou cancelamentos de ordem.</p>
+            </div>
+          </div>
+
+          <!-- Alerta 4: Registros fora do prazo -->
+          <div class="p-2 rounded border border-slate-300 bg-slate-50 flex items-start space-x-2">
+            <span class="px-1 py-0.5 bg-amber-100 text-amber-800 font-mono font-bold text-[9px] rounded shrink-0">SLA</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900">Registros Fora do Prazo (SLA)</span>
+                <span class="text-[10px] font-mono font-bold text-amber-800">182 itens</span>
+              </div>
+              <p class="text-[11px] text-slate-600 mt-0.5">Viagens com conclusão além da janela pactuada (1,4% do volume).</p>
+            </div>
+          </div>
+
+          <!-- Alerta 5: Erros de Atualização Power Query -->
+          <div class="p-2 rounded border border-slate-300 bg-slate-50 flex items-start space-x-2">
+            <span class="px-1 py-0.5 bg-slate-200 text-slate-700 font-mono font-bold text-[9px] rounded shrink-0">ETL</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900">Erros Power Query M</span>
+                <span class="text-[10px] font-mono font-bold text-slate-700">0 críticos / 2 tipos</span>
+              </div>
+              <p class="text-[11px] text-slate-600 mt-0.5">2 colunas convertidas com valor nulo tratado automaticamente pelo M.</p>
+            </div>
+          </div>
+
+          <!-- Alerta 6: Arquivos Não Gerados / Pendentes -->
+          <div class="p-2 rounded border border-slate-200 bg-slate-50 flex items-start space-x-2" id="alertaArquivoPendente">
+            <span class="px-1 py-0.5 bg-emerald-100 text-emerald-800 font-mono font-bold text-[9px] rounded shrink-0" id="alertaArquivoTag">PRONTO</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900" id="alertaArquivoTitulo">Arquivos Não Gerados</span>
+                <span class="text-[10px] font-mono font-bold text-emerald-800" id="alertaArquivoContador">0 pendentes</span>
+              </div>
+              <p class="text-[11px] text-slate-600 mt-0.5" id="alertaArquivoDesc">Todas as 4 memórias de cálculo estão aptas para geração e faturamento.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 3. BARRA DE ABAS NATIVA DO EXCEL (RODAPÉ DA PLANILHA) -->
+  <!-- ======================================================== -->
+  <footer class="bg-slate-200 border-t border-slate-300 px-2 py-0.5 flex items-center justify-between text-xs text-slate-700 shrink-0 select-none">
+    
+    <!-- Abas da Pasta de Trabalho V6.xlsm -->
+    <div class="flex items-center space-x-0.5 overflow-x-auto">
+      <button class="p-1 hover:bg-slate-300 rounded text-slate-600"><i data-lucide="chevron-left" class="w-3.5 h-3.5"></i></button>
+      <button class="p-1 hover:bg-slate-300 rounded text-slate-600"><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
+
+      <!-- ABA ATIVA: PAINEL -->
+      <div class="bg-white border-t-2 border-[#107c41] px-3.5 py-1 text-slate-900 font-bold flex items-center space-x-1.5 shadow-xs cursor-default">
+        <span class="w-1.5 h-1.5 rounded-full bg-[#107c41]"></span>
+        <span>PAINEL</span>
+      </div>
+
+      <!-- Outras abas da planilha -->
+      <button onclick="showToast('info', 'Alternando para aba [MC] (Memória Consolidada)')" class="bg-slate-100 hover:bg-white px-3 py-1 text-slate-600 hover:text-slate-900 font-medium transition-colors">MC</button>
+      <button onclick="showToast('info', 'Alternando para aba [ARM] (Armazenagem)')" class="bg-slate-100 hover:bg-white px-3 py-1 text-slate-600 hover:text-slate-900 font-medium transition-colors">ARM</button>
+      <button onclick="showToast('info', 'Alternando para aba [DADOS] (Base de Dados Bruta)')" class="bg-slate-100 hover:bg-white px-3 py-1 text-slate-600 hover:text-slate-900 font-medium transition-colors">DADOS</button>
+      <button onclick="showToast('info', 'Alternando para aba [FRETE] (Matriz de Custos/Tarifas)')" class="bg-slate-100 hover:bg-white px-3 py-1 text-slate-600 hover:text-slate-900 font-medium transition-colors">FRETE</button>
+      <button class="px-2 py-1 text-slate-400 hover:text-slate-700 font-bold">+</button>
+    </div>
+
+    <!-- Barra de Status do Excel (Inferior) -->
+    <div class="hidden md:flex items-center space-x-4 text-[11px] text-slate-600 font-medium">
+      <span class="flex items-center space-x-1">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+        <span id="statusExcel">Pronto</span>
+      </span>
+      <span>Cálculo: <strong class="text-slate-700">Automático</strong></span>
+      <span>Linhas: <strong class="text-slate-700 font-mono">12.840</strong></span>
+      <span>100% Zoom</span>
+    </div>
+
+  </footer>
+
+  <!-- MODAL DE AUDITORIA OPERACIONAL / DETALHES DE ERROS -->
+  <div id="modalErros" class="fixed inset-0 bg-slate-900/40 backdrop-blur-2xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded border border-slate-300 shadow-xl max-w-2xl w-full max-h-[85vh] flex flex-col">
+      <div class="px-4 py-2.5 bg-slate-100 border-b border-slate-300 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="bug" class="w-4 h-4 text-amber-600"></i>
+          <h3 class="font-bold text-xs text-slate-800 uppercase tracking-wide">Auditoria de Inconsistências de Medição</h3>
+        </div>
+        <button onclick="closeAuditModal()" class="text-slate-400 hover:text-slate-700 p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="p-4 overflow-y-auto space-y-3 text-xs">
+        <p class="text-slate-600">
+          Inconsistências identificadas na leitura dos arquivos individuais de monitoramento (Período: <strong>26/07/2026 a 25/08/2026</strong>):
+        </p>
+
+        <div class="border border-slate-200 rounded overflow-hidden">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="bg-slate-100 text-slate-700 font-semibold text-[11px]">
+              <tr>
+                <th class="p-2 border-b">Tipo</th>
+                <th class="p-2 border-b">Contrato</th>
+                <th class="p-2 border-b">Ref / Linha</th>
+                <th class="p-2 border-b">Descrição da Ocorrência</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 font-mono text-[11px]">
+              <tr>
+                <td class="p-2 text-amber-700 font-bold">SEM_OS</td>
+                <td class="p-2">PA-LT2</td>
+                <td class="p-2">#1890</td>
+                <td class="p-2 text-slate-600">Coluna Ordem de Serviço com campo nulo / vazio.</td>
+              </tr>
+              <tr>
+                <td class="p-2 text-red-700 font-bold">DE_PARA</td>
+                <td class="p-2">IRON-LT1-SP</td>
+                <td class="p-2">OS-8841</td>
+                <td class="p-2 text-slate-600">Localidade 'BASC-NOVA-EXT' não existe na tabela FRETE.</td>
+              </tr>
+              <tr>
+                <td class="p-2 text-amber-700 font-bold">DIVERG</td>
+                <td class="p-2">IRON-LT1-SP</td>
+                <td class="p-2">OS-9012</td>
+                <td class="p-2 text-slate-600">Solicitado 500 Ton vs Atendido 390 Ton (Diferença de 110 Ton).</td>
+              </tr>
+              <tr>
+                <td class="p-2 text-slate-700 font-bold">SLA</td>
+                <td class="p-2">IRON-LT1-RJ</td>
+                <td class="p-2">OS-7714</td>
+                <td class="p-2 text-slate-600">Entrega efetuada com 48h de atraso em relação ao SLA.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="bg-amber-50 border border-amber-200 p-2.5 rounded text-[11px] text-amber-900">
+          <strong>Impacto na Geração:</strong> Registros sem OS ou De-Para serão carregados na aba <code class="font-mono bg-white px-1 border border-amber-300 rounded">DADOS</code> com marcador de ressalva para posterior saneamento pelo fiscal de contrato.
+        </div>
+      </div>
+
+      <div class="px-4 py-2 bg-slate-100 border-t border-slate-300 flex justify-between items-center">
+        <button onclick="copyAuditLog()" class="inline-flex items-center space-x-1 text-xs text-slate-700 hover:text-slate-900 font-medium">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          <span>Copiar resumo de auditoria</span>
+        </button>
+        <button onclick="closeAuditModal()" class="px-3 py-1 bg-slate-800 text-white rounded text-xs font-semibold hover:bg-slate-700">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTAINER DE TOASTS NÃO-BLOQUEANTES -->
+  <div id="toastContainer" class="fixed bottom-10 right-4 space-y-2 z-50 pointer-events-none"></div>
+
+  <!-- ======================================================== -->
+  <!-- 4. LÓGICA JAVASCRIPT & MÁQUINA DE ESTADOS OPERACIONAIS -->
+  <!-- ======================================================== -->
+  <script>
+    // Inicialização de Ícones Lucide
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+    });
+
+    let currentState = 'ready';
+
+    // Função central que orquestra os 8 estados solicitados:
+    function simulateState(state) {
+      currentState = state;
+      const banner = document.getElementById('dynamicStatusBanner');
+      const bannerMsg = document.getElementById('bannerMessage');
+      const inlineProgress = document.getElementById('inlineProgressBox');
+      const btnAtualizar = document.getElementById('btnAtualizar');
+      const iconAtualizar = document.getElementById('iconAtualizar');
+      const textAtualizar = document.getElementById('textAtualizar');
+      const btnGerar = document.getElementById('btnGerar');
+      const iconGerar = document.getElementById('iconGerar');
+      const textGerar = document.getElementById('textGerar');
+      const statusExcel = document.getElementById('statusExcel');
+      const pingConexao = document.getElementById('pingConexao');
+      const lblConexao = document.getElementById('lblConexao');
+      const alertaArquivoTag = document.getElementById('alertaArquivoTag');
+      const alertaArquivoTitulo = document.getElementById('alertaArquivoTitulo');
+      const alertaArquivoContador = document.getElementById('alertaArquivoContador');
+      const alertaArquivoDesc = document.getElementById('alertaArquivoDesc');
+
+      // Restaurações padrão
+      banner.classList.add('hidden');
+      inlineProgress.classList.add('hidden');
+      btnAtualizar.disabled = false;
+      btnAtualizar.classList.remove('opacity-60', 'cursor-not-allowed');
+      iconAtualizar.classList.remove('animate-spin');
+      textAtualizar.innerText = "Atualizar painel";
+      btnGerar.disabled = false;
+      btnGerar.classList.remove('opacity-60', 'cursor-not-allowed');
+      iconGerar.classList.remove('animate-spin');
+      textGerar.innerText = "Gerar arquivos (4)";
+      statusExcel.innerText = "Pronto";
+      pingConexao.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0";
+      lblConexao.innerText = "4 fontes conectadas";
+
+      // Restaura linha IRON-LT1-ES
+      resetESFileRow();
+
+      switch(state) {
+        case 'ready':
+          showToast('info', 'Estado Inicial: Dados consolidados e prontos para faturamento.');
+          break;
+
+        case 'updating':
+          // Atualização em andamento (Power Query M)
+          inlineProgress.classList.remove('hidden');
+          btnAtualizar.disabled = true;
+          btnAtualizar.classList.add('opacity-60', 'cursor-not-allowed');
+          iconAtualizar.classList.add('animate-spin');
+          textAtualizar.innerText = "Atualizando...";
+          statusExcel.innerText = "Executando consulta Power Query M...";
+
+          banner.classList.remove('hidden');
+          banner.className = 'px-4 py-1.5 border-b text-xs flex items-center justify-between font-medium bg-blue-50 text-blue-900 border-blue-200 shrink-0';
+          bannerMsg.innerHTML = `
+            <i data-lucide="loader-2" class="w-4 h-4 animate-spin text-blue-700"></i>
+            <span>Executando tratamento Power Query M: <strong>Atualizando consulta 14 de 91</strong>...</span>
+          `;
+          showToast('info', 'Atualização iniciada: lendo bases individuais.');
+          break;
+
+        case 'success':
+          // Atualização com Sucesso
+          banner.classList.remove('hidden');
+          banner.className = 'px-4 py-1.5 border-b text-xs flex items-center justify-between font-medium bg-emerald-50 text-emerald-900 border-emerald-200 shrink-0';
+          bannerMsg.innerHTML = `
+            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-700"></i>
+            <span>Atualização concluída com sucesso! 12.840 linhas integradas sem falhas de ETL.</span>
+          `;
+          showToast('success', 'Painel atualizado com 100% de sucesso.');
+          break;
+
+        case 'partial_error':
+          // Atualização com Erros Parciais
+          banner.classList.remove('hidden');
+          banner.className = 'px-4 py-1.5 border-b text-xs flex items-center justify-between font-medium bg-amber-50 text-amber-900 border-amber-300 shrink-0';
+          bannerMsg.innerHTML = `
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-700"></i>
+            <span>Atualização com avisos: <strong>18 inconsistências encontradas</strong> (34 registros sem OS e 12 localidades pendentes de De-Para).</span>
+          `;
+          pingConexao.className = "w-2 h-2 rounded-full bg-amber-500 shrink-0";
+          lblConexao.innerText = "Conexão com ressalvas";
+          showToast('warning', 'Atualização finalizada com divergências parciais.');
+          break;
+
+        case 'failed':
+          // Falha Crítica de Conexão ou Execução VBA
+          banner.classList.remove('hidden');
+          banner.className = 'px-4 py-1.5 border-b text-xs flex items-center justify-between font-medium bg-red-50 text-red-900 border-red-300 shrink-0';
+          bannerMsg.innerHTML = `
+            <i data-lucide="x-circle" class="w-4 h-4 text-red-700"></i>
+            <span>Falha de Atualização: O arquivo de monitoramento do contrato <strong>IRON-LT1-RJ</strong> está bloqueado por outro usuário na rede.</span>
+          `;
+          pingConexao.className = "w-2 h-2 rounded-full bg-red-600 shrink-0";
+          lblConexao.innerText = "Erro na fonte de dados";
+          showToast('error', 'Falha crítica ao ler arquivos de monitoramento.');
+          break;
+
+        case 'generating':
+          // Geração de Arquivos em Andamento
+          btnGerar.disabled = true;
+          btnGerar.classList.add('opacity-60', 'cursor-not-allowed');
+          iconGerar.classList.add('animate-spin');
+          textGerar.innerText = "Gerando pastas...";
+          statusExcel.innerText = "Macro VBA gerando abas MC, ARM, DADOS e FRETE...";
+
+          banner.classList.remove('hidden');
+          banner.className = 'px-4 py-1.5 border-b text-xs flex items-center justify-between font-medium bg-slate-100 text-slate-800 border-slate-300 shrink-0';
+          bannerMsg.innerHTML = `
+            <i data-lucide="loader-2" class="w-4 h-4 animate-spin text-slate-700"></i>
+            <span>Rotina VBA em andamento: Exportando pastas de trabalho com abas <strong>MC, ARM, DADOS e FRETE</strong>...</span>
+          `;
+          showToast('info', 'Compilação de arquivos iniciada via VBA.');
+          break;
+
+        case 'files_done':
+          // Arquivos Gerados com Sucesso
+          banner.classList.remove('hidden');
+          banner.className = 'px-4 py-1.5 border-b text-xs flex items-center justify-between font-medium bg-emerald-50 text-emerald-900 border-emerald-200 shrink-0';
+          bannerMsg.innerHTML = `
+            <i data-lucide="check-check" class="w-4 h-4 text-emerald-700"></i>
+            <span>Todos os 4 arquivos de Memória de Cálculo foram gerados com sucesso na pasta de saída.</span>
+          `;
+          showToast('success', 'Todos os arquivos foram exportados!');
+          break;
+
+        case 'files_incomplete':
+          // Arquivo Não Gerado / Pendente (IRON-LT1-ES)
+          setESFilePending();
+          banner.classList.remove('hidden');
+          banner.className = 'px-4 py-1.5 border-b text-xs flex items-center justify-between font-medium bg-red-50 text-red-900 border-red-200 shrink-0';
+          bannerMsg.innerHTML = `
+            <i data-lucide="alert-octagon" class="w-4 h-4 text-red-700"></i>
+            <span>Geração Incompleta: 3 de 4 arquivos gerados. <strong>IRON-LT1-ES</strong> pendente devido a pendências de frete.</span>
+          `;
+          alertaArquivoTag.className = "px-1 py-0.5 bg-red-200 text-red-900 font-mono font-bold text-[9px] rounded shrink-0";
+          alertaArquivoTag.innerText = "PENDENTE";
+          alertaArquivoContador.innerText = "1 pendente";
+          alertaArquivoContador.className = "text-[10px] font-mono font-bold text-red-700";
+          alertaArquivoDesc.innerText = "O contrato IRON-LT1-ES não pôde ser gerado devido a 12 localidades não mapeadas.";
+          showToast('error', 'Atenção: 1 arquivo não pôde ser gerado.');
+          break;
+      }
+
+      lucide.createIcons();
+    }
+
+    // Processo de Atualização Simulado (com progresso 14 de 91)
+    function runRefreshProcess() {
+      const selector = document.getElementById('stateSelector');
+      selector.value = 'updating';
+      simulateState('updating');
+
+      let currentQuery = 14;
+      const totalQueries = 91;
+      const bar = document.getElementById('inlineProgressBar');
+      const lbl = document.getElementById('inlineProgressLabel');
+
+      const interval = setInterval(() => {
+        currentQuery += 19;
+        if (currentQuery > totalQueries) currentQuery = totalQueries;
+
+        const pct = Math.round((currentQuery / totalQueries) * 100);
+        bar.style.width = pct + '%';
+        lbl.innerText = `Atualizando consulta ${currentQuery} de ${totalQueries}`;
+
+        if (currentQuery >= totalQueries) {
+          clearInterval(interval);
+          setTimeout(() => {
+            selector.value = 'success';
+            simulateState('success');
+            const now = new Date();
+            document.getElementById('lblTimestamp').innerText = 
+              now.toLocaleDateString('pt-BR') + ' ' + 
+              now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+          }, 450);
+        }
+      }, 350);
+    }
+
+    // Processo de Geração de Arquivos
+    function runFileGeneration() {
+      const selector = document.getElementById('stateSelector');
+      selector.value = 'generating';
+      simulateState('generating');
+
+      setTimeout(() => {
+        selector.value = 'files_done';
+        simulateState('files_done');
+      }, 2000);
+    }
+
+    // Ajustes na Linha de IRON-LT1-ES para estado pendente
+    function setESFilePending() {
+      const row = document.getElementById('fileRow-IRON-LT1-ES');
+      if (!row) return;
+
+      document.getElementById('statusCellFileES').innerHTML = `
+        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-100 text-red-800 border border-red-300">
+          <i data-lucide="x" class="w-3 h-3 mr-1 text-red-600"></i> Não gerado
+        </span>
+      `;
+      document.getElementById('actionCellFileES').innerHTML = `
+        <button disabled class="px-2 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded text-[11px] font-medium cursor-not-allowed">
+          Pendente De-Para
+        </button>
+      `;
+      lucide.createIcons();
+    }
+
+    function resetESFileRow() {
+      const row = document.getElementById('fileRow-IRON-LT1-ES');
+      if (!row) return;
+
+      document.getElementById('statusCellFileES').innerHTML = `
+        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+          <i data-lucide="check" class="w-3 h-3 mr-1 text-emerald-600"></i> Gerado com sucesso
+        </span>
+      `;
+      document.getElementById('actionCellFileES').innerHTML = `
+        <button onclick="openFileAction('MC_IRON-LT1-ES_20260726_20260825_REV01.xlsm')" class="px-2 py-0.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded text-[11px] font-medium shadow-2xs">
+          Abrir arquivo
+        </button>
+      `;
+      document.getElementById('alertaArquivoTag').className = "px-1 py-0.5 bg-emerald-100 text-emerald-800 font-mono font-bold text-[9px] rounded shrink-0";
+      document.getElementById('alertaArquivoTag').innerText = "PRONTO";
+      document.getElementById('alertaArquivoContador').innerText = "0 pendentes";
+      document.getElementById('alertaArquivoContador').className = "text-[10px] font-mono font-bold text-emerald-800";
+      document.getElementById('alertaArquivoDesc').innerText = "Todas as 4 memórias de cálculo estão aptas para geração e faturamento.";
+      lucide.createIcons();
+    }
+
+    // Filtros Rápidos
+    function filterContracts() {
+      const cto = document.getElementById('filtroContrato').value;
+      const rows = document.querySelectorAll('#tabelaContratosBody tr');
+
+      rows.forEach(r => {
+        const rowContrato = r.getAttribute('data-contrato');
+        if (cto === 'ALL' || rowContrato === cto) {
+          r.style.display = '';
+        } else {
+          r.style.display = 'none';
+        }
+      });
+
+      showToast('info', `Filtro de Contrato: ${cto}`);
+    }
+
+    function filterByAlert(tipo) {
+      showToast('info', `Filtro aplicado na base: Exibindo linhas com pendência [${tipo}]`);
+    }
+
+    function openDeParaTab() {
+      showToast('info', 'Comando VBA: Alternando para a aba de parâmetros [FRETE] / De-Para.');
+    }
+
+    function openOutputDirectory() {
+      showToast('info', 'Abrindo diretório no Explorer: C:\\Medicoes_Petrobras\\2026_08\\Saida_Final\\');
+    }
+
+    function openFileAction(fileName) {
+      showToast('success', `Abrindo pasta de trabalho: ${fileName}`);
+    }
+
+    function openAuditModal() {
+      document.getElementById('modalErros').classList.remove('hidden');
+    }
+
+    function closeAuditModal() {
+      document.getElementById('modalErros').classList.add('hidden');
+    }
+
+    function copyAuditLog() {
+      const log = "AUDITORIA OPERACIONAL PETROBRAS V6\n- 34 registros sem código OS em PA-LT2 e IRON-LT1-RJ\n- 12 localidades pendentes de De-Para\n- 440 Ton divergentes entre solicitado e atendido\n- 182 registros fora da janela pactuada de SLA";
+      document.execCommand('copy');
+      showToast('success', 'Relatório copiado para a Área de Transferência.');
+    }
+
+    // Sistema de Notificações Toast Corporativo
+    function showToast(type, text) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+
+      let icon = 'info';
+      let border = 'border-slate-300 bg-white text-slate-800';
+
+      if (type === 'success') {
+        icon = 'check-circle';
+        border = 'border-emerald-300 bg-emerald-50 text-emerald-950';
+      } else if (type === 'warning') {
+        icon = 'alert-triangle';
+        border = 'border-amber-300 bg-amber-50 text-amber-950';
+      } else if (type === 'error') {
+        icon = 'alert-octagon';
+        border = 'border-red-300 bg-red-50 text-red-950';
+      }
+
+      toast.className = `p-2.5 rounded border shadow-lg text-xs flex items-center space-x-2 max-w-sm pointer-events-auto transition-all ${border}`;
+      toast.innerHTML = `
+        <i data-lucide="${icon}" class="w-4 h-4 shrink-0"></i>
+        <span class="flex-1 font-medium">${text}</span>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px)';
+        toast.style.transition = 'all 0.25s ease';
+        setTimeout(() => toast.remove(), 250);
+      }, 3200);
+    }
+  </script>
+</body>
+</html>

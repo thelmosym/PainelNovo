@@ -1,0 +1,12 @@
+let
+    Fonte = Folder.Files(localMonitIndividualT2M),
+    #"Arquivos Ocultos Filtrados1" = Table.SelectRows(Fonte, each [Attributes]?[Hidden]? <> true),
+    #"Invocar Função Personalizada1" = Table.AddColumn(#"Arquivos Ocultos Filtrados1", "Transformar Arquivo", each #"Transformar Arquivo"([Content])),
+    #"Colunas Renomeadas1" = Table.RenameColumns(#"Invocar Função Personalizada1", {"Name", "Nome da Origem"}),
+    #"Outras Colunas Removidas1" = Table.SelectColumns(#"Colunas Renomeadas1", {"Nome da Origem", "Transformar Arquivo"}),
+    #"Coluna de Tabela Expandida1" = Table.ExpandTableColumn(#"Outras Colunas Removidas1", "Transformar Arquivo", Table.ColumnNames(#"Transformar Arquivo"(#"Arquivo de Amostra"))),
+    #"Tipo Alterado" = Table.TransformColumnTypes(#"Coluna de Tabela Expandida1",{{"Nome da Origem", type text}, {"Atendente", type text}, {"Período#(lf)faturamento", type date}, {"Situação", type text}, {"Contrato", type text}, {"UF", type text}, {"Descrição da atividade", type text}, {"Item", type text}, {"Aplicação", type text}, {"Código da#(lf)solicitação", type text}, {"Chave#(lf)solicitante", type text}, {"Nome Solicitante", type text}, {"D. solicitação", type datetime}, {"Prazo#(lf)aplicação", type datetime}, {"Gerência solicitante", type text}, {"Qtd.#(lf)Solicitada", Int64.Type}, {"Código OS", type any}, {"D. abertura", type datetime}, {"D. fechamento", type datetime}, {"Prazo combinado", type datetime}, {"Qtd.#(lf)Atendida", Int64.Type}, {"Obs. Sigla", type text}, {"Localidade", type text}, {"Comentários", type text}, {"Observações", type text}, {"OS#(lf)disponibilizada?", type text}, {"LOG", type any}, {"Caixa#(lf)(20kg)", Int64.Type}, {"Caixa#(lf)(Mídia)", Int64.Type}, {"Caixa Tubo#(lf)(perfil de poço)", type any}, {"Caixa Tubo#(lf)(Engenharia)", Int64.Type}, {"Lacre", Int64.Type}, {"Etiqueta (20kg)", Int64.Type}, {"Etiqueta (Mídia)", Int64.Type}, {"Etiqueta Tubo#(lf)(perfil de poço)", type any}, {"Etiqueta Tubo#(lf)(Engenharia)", Int64.Type}, {"Lançamento de etiqueta/Registro OS", type text}, {"Observação", type text}}),
+    #"Linhas Filtradas" = Table.SelectRows(#"Tipo Alterado", each ([#"Período#(lf)faturamento"] <> null) and ([Situação] = "AT" or [Situação] = "CO")),
+    #"Linhas Agrupadas" = Table.Group(#"Linhas Filtradas", {"Nome da Origem"}, {{"Contagem", each Table.RowCount(_), Int64.Type}})
+in
+    #"Linhas Agrupadas"
