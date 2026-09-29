@@ -1,7 +1,7 @@
 Option Explicit
 
 '-----------------------------------------------------------------------
-' M√ìDULO: modGerarArquivosPorContrato
+' M”DULO: modGerarArquivosPorContrato
 '---------------------------------------------------------------------
 ' Gera 4 arquivos finais (um por contrato: PA-LT2, IRON-LT1-RJ,
 ' IRON-LT1-SP, IRON-LT1-ES), cada um com 4 abas fixas (MC, ARM, DADOS,
@@ -13,69 +13,69 @@ Option Explicit
 ' Ex. PA-LT2: 4600687006-PLA-MemoriaPetrobras-PA-LT2-BA_18092026_133421.xlsx
 ' Ex. IRON-LT1-RJ: 4600686987-PLA-MemoriaPetrobras-IRON-LT1-RJ_18092026_133425.xlsx
 '
-' Local de salvamento: subpasta "MEDI√á√ÉO" dentro da mesma pasta onde
-' este arquivo (Painel) est√° salvo. A subpasta √© criada
-' automaticamente caso n√£o exista.
+' Local de salvamento: subpasta "MEDI«√O" dentro da mesma pasta onde
+' este arquivo (Painel) est· salvo. A subpasta È criada
+' automaticamente caso n„o exista.
 '
-' Ao final, grava um HYPERLINK para cada arquivo gerado nas c√©lulas
+' Ao final, grava um HYPERLINK para cada arquivo gerado nas cÈlulas
 ' K7 (PA-LT2), K8 (IRON-LT1-RJ), K9 (IRON-LT1-SP), K10 (IRON-LT1-ES)
 ' da aba "Painel".
 '
-' Associe esta macro (GerarArquivosPorContrato) a um bot√£o via:
-' Inserir > Formas/Bot√£o > Bot√£o direito > Atribuir Macro.
+' Associe esta macro (GerarArquivosPorContrato) a um bot„o via:
+' Inserir > Formas/Bot„o > Bot„o direito > Atribuir Macro.
 '-----------------------------------------------------------------------
 
-Private Const MSG_TITULO As String = "Gera√ß√£o de Arquivos por Contrato"
+Private Const MSG_TITULO As String = "GeraÁ„o de Arquivos por Contrato"
 
-' Aba onde os links dos arquivos gerados ser√£o gravados
+' Aba onde os links dos arquivos gerados ser„o gravados
 Private Const NOME_PLANILHA_LINKS As String = "Painel"
 
-' Coluna e linha inicial onde os links ser√£o gravados (K7 a K10)
+' Coluna e linha inicial onde os links ser„o gravados (K7 a K10)
 Private Const COLUNA_CELULA_LINK As String = "K"
 Private Const LINHA_INICIAL_LINK As Integer = 7
 
-' Nome da subpasta onde os arquivos finais ser√£o salvos (dentro da
-' mesma pasta em que este arquivo Painel est√° salvo)
-Private Const NOME_SUBPASTA_DESTINO As String = "MEDI√á√ÉO"
+' Nome da subpasta onde os arquivos finais ser„o salvos (dentro da
+' mesma pasta em que este arquivo Painel est· salvo)
+Private Const NOME_SUBPASTA_DESTINO As String = "MEDI«√O"
 
-' GUID do r√≥tulo de confidencialidade "P√∫blica" do tenant da Petrobras.
-' Enquanto esta constante estiver VAZIA (""), a aplica√ß√£o do r√≥tulo √©
+' GUID do rÛtulo de confidencialidade "P˙blica" do tenant da Petrobras.
+' Enquanto esta constante estiver VAZIA (""), a aplicaÁ„o do rÛtulo È
 ' pulada (ver AplicarPerfilPublico).
 Private Const PUBLICO_LABEL_ID As String = "140b9f7d-8e3a-482f-9702-4b7ffc40985a"
 
 Private Const MSO_ASSIGNMENT_METHOD_STANDARD As Long = 1
 Private Const MSO_ASSIGNMENT_METHOD_PRIVILEGED As Long = 2
 
-' Tipos de aba de origem ‚Äî tamb√©m ser√£o os nomes das abas no arquivo
+' Tipos de aba de origem ó tambÈm ser„o os nomes das abas no arquivo
 ' final, NESTA ORDEM
 Private Function ListaTipos() As Variant
     ListaTipos = Array("MC", "ARM", "DADOS", "FRETE")
 End Function
 
-' Contratos ‚Äî cada um gera um arquivo final separado (nome das ABAS
+' Contratos ó cada um gera um arquivo final separado (nome das ABAS
 ' de origem, SEM sufixo de estado).
 ' A ORDEM DESTE ARRAY DEFINE O MAPEAMENTO DE LINHAS (K7 a K10) e
-' TAMB√âM o mapeamento dos arrays ListaNumerosContrato e
-' ListaSufixosEstado abaixo ‚Äî todos DEVEM manter a MESMA ORDEM.
+' TAMB…M o mapeamento dos arrays ListaNumerosContrato e
+' ListaSufixosEstado abaixo ó todos DEVEM manter a MESMA ORDEM.
 Private Function ListaContratos() As Variant
     ListaContratos = Array("PA-LT2", "IRON-LT1-RJ", "IRON-LT1-SP", "IRON-LT1-ES")
 End Function
 
-' N√∫mero do contrato SAP de cada contrato, NA MESMA ORDEM de
+' N˙mero do contrato SAP de cada contrato, NA MESMA ORDEM de
 ' ListaContratos() acima.
-' Os tr√™s lotes IRON (RJ/SP/ES) compartilham o mesmo n√∫mero de
-' contrato-m√£e (4600686987).
+' Os trÍs lotes IRON (RJ/SP/ES) compartilham o mesmo n˙mero de
+' contrato-m„e (4600686987).
 ' Ordem: PA-LT2 | IRON-LT1-RJ | IRON-LT1-SP | IRON-LT1-ES
 Private Function ListaNumerosContrato() As Variant
     ListaNumerosContrato = Array("4600687006", "4600686987", "4600686987", "4600686987")
 End Function
 
-' Sufixo de estado usado apenas na composi√ß√£o do NOME DO ARQUIVO final
-' (N√ÉO altera o nome das abas de origem, que continuam sem sufixo).
+' Sufixo de estado usado apenas na composiÁ„o do NOME DO ARQUIVO final
+' (N√O altera o nome das abas de origem, que continuam sem sufixo).
 ' NA MESMA ORDEM de ListaContratos() acima.
-' Os contratos IRON-LT1-RJ/SP/ES j√° t√™m o estado embutido no pr√≥prio
-' nome do contrato ‚Äî por isso recebem sufixo VAZIO aqui, evitando
-' duplica√ß√£o (ex.: "IRON-LT1-RJ-RJ"). Apenas PA-LT2 (que n√£o tem
+' Os contratos IRON-LT1-RJ/SP/ES j· tÍm o estado embutido no prÛprio
+' nome do contrato ó por isso recebem sufixo VAZIO aqui, evitando
+' duplicaÁ„o (ex.: "IRON-LT1-RJ-RJ"). Apenas PA-LT2 (que n„o tem
 ' estado no nome) recebe sufixo real ("BA").
 Private Function ListaSufixosEstado() As Variant
     ListaSufixosEstado = Array("BA", "", "", "")
@@ -83,7 +83,7 @@ End Function
 
 
 '-----------------------------------------------------------------------
-' PROCEDIMENTO PRINCIPAL ‚Äî associar este ao bot√£o
+' PROCEDIMENTO PRINCIPAL ó associar este ao bot„o
 '-----------------------------------------------------------------------
 Public Sub GerarArquivosPorContrato()
 
@@ -106,10 +106,10 @@ Public Sub GerarArquivosPorContrato()
     vNumeros = ListaNumerosContrato()
     vSufixos = ListaSufixosEstado()
 
-    '-- 1) PASTA DE DESTINO = SUBPASTA "MEDI√á√ÉO" NA RAIZ DO ARQUIVO ------
+    '-- 1) PASTA DE DESTINO = SUBPASTA "MEDI«√O" NA RAIZ DO ARQUIVO ------
     If wbOrigem.Path = "" Then
         MsgBox "Procedimento interrompido." & vbNewLine & vbNewLine & _
-            "Este arquivo ainda n√£o foi salvo, portanto n√£o √© poss√≠vel " & _
+            "Este arquivo ainda n„o foi salvo, portanto n„o È possÌvel " & _
             "determinar a pasta de destino automaticamente." & vbNewLine & _
             "Salve este arquivo (Ctrl+S) e tente novamente.", _
             vbExclamation, MSG_TITULO
@@ -118,21 +118,21 @@ Public Sub GerarArquivosPorContrato()
 
     sPastaDestino = ObterOuCriarSubpasta(wbOrigem.Path, NOME_SUBPASTA_DESTINO)
     If sPastaDestino = "" Then
-        MsgBox "Procedimento interrompido. N√£o foi poss√≠vel criar/acessar " & _
+        MsgBox "Procedimento interrompido. N„o foi possÌvel criar/acessar " & _
             "a pasta '" & NOME_SUBPASTA_DESTINO & "'.", vbCritical, MSG_TITULO
         Exit Sub
     End If
 
-    '-- 2) LOCALIZA (OU CRIA) A ABA ONDE OS LINKS SER√ÉO GRAVADOS ---------
+    '-- 2) LOCALIZA (OU CRIA) A ABA ONDE OS LINKS SER√O GRAVADOS ---------
     Set wsLinks = ObterOuCriarPlanilha(wbOrigem, NOME_PLANILHA_LINKS)
 
-    '-- 3) CONFIRMA√á√ÉO ANTES DE INICIAR -----------------------------------
-    If MsgBox("Ser√£o gerados " & (UBound(vContratos) + 1) & " arquivos (um por contrato):" & _
+    '-- 3) CONFIRMA«√O ANTES DE INICIAR -----------------------------------
+    If MsgBox("Ser„o gerados " & (UBound(vContratos) + 1) & " arquivos (um por contrato):" & _
         vbNewLine & vbNewLine & _
         Join(vContratos, ", ") & vbNewLine & vbNewLine & _
-        "Cada arquivo ter√° as abas: " & Join(vTipos, ", ") & vbNewLine & _
+        "Cada arquivo ter· as abas: " & Join(vTipos, ", ") & vbNewLine & _
         "Destino: " & sPastaDestino & vbNewLine & _
-        "Links ser√£o gravados em: " & wsLinks.Name & "!" & COLUNA_CELULA_LINK & _
+        "Links ser„o gravados em: " & wsLinks.Name & "!" & COLUNA_CELULA_LINK & _
         LINHA_INICIAL_LINK & ":" & COLUNA_CELULA_LINK & _
         (LINHA_INICIAL_LINK + UBound(vContratos)) & vbNewLine & vbNewLine & _
         "INICIAR?", vbYesNo + vbQuestion, MSG_TITULO) = vbNo Then
@@ -163,12 +163,12 @@ Public Sub GerarArquivosPorContrato()
             iArquivosOK = iArquivosOK + 1
             sResumoFinal = sResumoFinal & "OK - " & sContrato & " -> " & sCaminhoGerado & vbNewLine
 
-            '-- GRAVA O LINK DO ARQUIVO NA C√âLULA CORRESPONDENTE ------
+            '-- GRAVA O LINK DO ARQUIVO NA C…LULA CORRESPONDENTE ------
             EscreverLinkArquivo wsLinks, iContrato, sContrato, sCaminhoGerado
         Else
             sResumoFinal = sResumoFinal & "FALHA - " & sContrato & " (ver mensagens anteriores)" & vbNewLine
 
-            '-- Marca a c√©lula com erro (sem link) -----------------------
+            '-- Marca a cÈlula com erro (sem link) -----------------------
             EscreverErroLink wsLinks, iContrato, sContrato
         End If
     Next iContrato
@@ -176,7 +176,7 @@ Public Sub GerarArquivosPorContrato()
     Application.ScreenUpdating = True
     Application.StatusBar = False
 
-    MsgBox "Processamento conclu√≠do." & vbNewLine & vbNewLine & _
+    MsgBox "Processamento concluÌdo." & vbNewLine & vbNewLine & _
         "Arquivos gerados com sucesso: " & iArquivosOK & " de " & (UBound(vContratos) + 1) & _
         vbNewLine & vbNewLine & sResumoFinal & vbNewLine & _
         "Links gravados em: " & wsLinks.Name & "!" & COLUNA_CELULA_LINK & LINHA_INICIAL_LINK & _
@@ -194,7 +194,7 @@ End Sub
 
 
 '-----------------------------------------------------------------------
-' Verifica se a subpasta informada existe dentro da pasta base; se n√£o
+' Verifica se a subpasta informada existe dentro da pasta base; se n„o
 ' existir, tenta CRIAR. Retorna o caminho completo da subpasta (sem
 ' barra final), ou "" em caso de falha.
 '-----------------------------------------------------------------------
@@ -219,7 +219,7 @@ End Function
 
 
 '-----------------------------------------------------------------------
-' Retorna o N√öMERO DA LINHA (7 a 10) correspondente ao √≠ndice do
+' Retorna o N⁄MERO DA LINHA (7 a 10) correspondente ao Ìndice do
 ' contrato no array vContratos.
 '-----------------------------------------------------------------------
 Private Function ObterLinhaCelulaLink(iIndiceContrato As Integer) As Integer
@@ -228,7 +228,7 @@ End Function
 
 
 '-----------------------------------------------------------------------
-' Grava um HYPERLINK para o arquivo gerado na c√©lula {COLUNA},{linha}
+' Grava um HYPERLINK para o arquivo gerado na cÈlula {COLUNA},{linha}
 ' correspondente ao contrato (coluna K, linhas 7 a 10).
 '-----------------------------------------------------------------------
 Private Sub EscreverLinkArquivo(ws As Worksheet, iIndiceContrato As Integer, _
@@ -263,8 +263,8 @@ End Sub
 
 
 '-----------------------------------------------------------------------
-' Marca a c√©lula correspondente ao contrato com uma mensagem de erro
-' (sem hyperlink), quando a gera√ß√£o daquele arquivo falhou.
+' Marca a cÈlula correspondente ao contrato com uma mensagem de erro
+' (sem hyperlink), quando a geraÁ„o daquele arquivo falhou.
 '-----------------------------------------------------------------------
 Private Sub EscreverErroLink(ws As Worksheet, iIndiceContrato As Integer, sContrato As String)
 
@@ -285,7 +285,7 @@ End Sub
 
 
 '-----------------------------------------------------------------------
-' Retorna a Worksheet informada; se n√£o existir, CRIA uma nova aba com
+' Retorna a Worksheet informada; se n„o existir, CRIA uma nova aba com
 ' esse nome.
 '-----------------------------------------------------------------------
 Private Function ObterOuCriarPlanilha(wb As Workbook, nomeAba As String) As Worksheet
@@ -305,14 +305,14 @@ End Function
 
 
 '-----------------------------------------------------------------------
-' Gera o arquivo final de UM contrato espec√≠fico, com as 4 abas
+' Gera o arquivo final de UM contrato especÌfico, com as 4 abas
 ' (MC, ARM, DADOS, FRETE) copiadas a partir das respectivas abas de
 ' origem "{TIPO}_{CONTRATO}" da planilha principal.
 '
 ' Nome do arquivo: "{sNumero}-PLA-MemoriaPetrobras-{sContrato}
 ' [-{sSufixo}]_{DDMMAAAA}_{HHMMSS}.xlsx"
-' O sufixo s√≥ √© anexado (com h√≠fen) quando N√ÉO estiver vazio ‚Äî evita
-' duplicar o estado no nome dos contratos IRON, que j√° o possuem
+' O sufixo sÛ È anexado (com hÌfen) quando N√O estiver vazio ó evita
+' duplicar o estado no nome dos contratos IRON, que j· o possuem
 ' embutido (ex.: "IRON-LT1-RJ").
 '
 ' Retorna o caminho completo do arquivo gerado, ou "" em caso de falha
@@ -366,8 +366,8 @@ Private Function GerarArquivoDoContrato(wbOrigem As Workbook, sContrato As Strin
         On Error GoTo TratarErroLocal
 
         If wsOrigem Is Nothing Then
-            sFaltantes = sFaltantes & " - Aba '" & sNomeAbaOrig & "' n√£o encontrada." & vbNewLine
-            wsDestino.Range("A1").Value = "Aba de origem '" & sNomeAbaOrig & "' n√£o encontrada."
+            sFaltantes = sFaltantes & " - Aba '" & sNomeAbaOrig & "' n„o encontrada." & vbNewLine
+            wsDestino.Range("A1").Value = "Aba de origem '" & sNomeAbaOrig & "' n„o encontrada."
         Else
             If sTipo = "MC" Then
                 CopiarComFormatacaoCompleta wsOrigem.UsedRange, wsDestino
@@ -382,15 +382,15 @@ Private Function GerarArquivoDoContrato(wbOrigem As Workbook, sContrato As Strin
 
     If iCopiadas = 0 Then
         MsgBox "Nenhuma aba de origem encontrada para o contrato " & sContrato & _
-            ". Arquivo n√£o ser√° gerado." & vbNewLine & vbNewLine & sFaltantes, _
+            ". Arquivo n„o ser· gerado." & vbNewLine & vbNewLine & sFaltantes, _
             vbExclamation, MSG_TITULO
         wbDestino.Close SaveChanges:=False
         Exit Function
     End If
 
     If sFaltantes <> "" Then
-        MsgBox "Aten√ß√£o ‚Äî contrato " & sContrato & ": algumas abas de origem " & _
-            "n√£o foram encontradas e ficaram em branco no arquivo final:" & _
+        MsgBox "AtenÁ„o ó contrato " & sContrato & ": algumas abas de origem " & _
+            "n„o foram encontradas e ficaram em branco no arquivo final:" & _
             vbNewLine & vbNewLine & sFaltantes, vbExclamation, MSG_TITULO
     End If
 
@@ -428,8 +428,8 @@ End Function
 
 
 '-----------------------------------------------------------------------
-' Retorna a Worksheet com o nome exato informado, ou Nothing se n√£o
-' existir no workbook (sem lan√ßar erro).
+' Retorna a Worksheet com o nome exato informado, ou Nothing se n„o
+' existir no workbook (sem lanÁar erro).
 '-----------------------------------------------------------------------
 Private Function ObterPlanilha(wb As Workbook, nomeAba As String) As Worksheet
     Dim ws As Worksheet
@@ -443,8 +443,8 @@ End Function
 
 
 '-----------------------------------------------------------------------
-' Detecta e RETORNA o Range correspondente √† √°rea real de dados de uma
-' aba TABULAR (ignorando formata√ß√£o solta sem conte√∫do). Usado para
+' Detecta e RETORNA o Range correspondente ‡ ·rea real de dados de uma
+' aba TABULAR (ignorando formataÁ„o solta sem conte˙do). Usado para
 ' ARM, DADOS e FRETE.
 '-----------------------------------------------------------------------
 Private Function ObterAreaRealDados(ws As Worksheet) As Range
@@ -472,7 +472,7 @@ End Function
 
 
 '-----------------------------------------------------------------------
-' Copia um range como VALORES + FORMATOS DE C√âLULA ‚Äî usado em ARM,
+' Copia um range como VALORES + FORMATOS DE C…LULA ó usado em ARM,
 ' DADOS e FRETE.
 '-----------------------------------------------------------------------
 Private Sub CopiarValoresEFormatos(rngOrigem As Range, wsDestino As Worksheet)
@@ -493,7 +493,7 @@ End Sub
 
 
 '-----------------------------------------------------------------------
-' Copia um range PRESERVANDO TODA A FORMATA√á√ÉO ‚Äî usado exclusivamente
+' Copia um range PRESERVANDO TODA A FORMATA«√O ó usado exclusivamente
 ' na aba MC (via wsOrigem.UsedRange).
 '-----------------------------------------------------------------------
 Private Sub CopiarComFormatacaoCompleta(rngOrigem As Range, wsDestino As Worksheet)
@@ -551,15 +551,15 @@ End Sub
 
 
 '-----------------------------------------------------------------------
-' Aplica o r√≥tulo de confidencialidade "P√∫blica" ao workbook. Requer
+' Aplica o rÛtulo de confidencialidade "P˙blica" ao workbook. Requer
 ' que a constante PUBLICO_LABEL_ID esteja preenchida com o GUID
-' correto do r√≥tulo no tenant da Petrobras.
+' correto do rÛtulo no tenant da Petrobras.
 '
-' CORRE√á√ÉO: a guarda anterior comparava a constante PUBLICO_LABEL_ID
-' contra ela mesma (o pr√≥prio GUID j√° preenchido), o que fazia a
-' condi√ß√£o ser SEMPRE verdadeira e a fun√ß√£o sempre sa√≠a sem aplicar
-' o r√≥tulo. Agora a guarda compara corretamente contra string vazia,
-' que √© o valor esperado apenas enquanto o GUID ainda n√£o tiver sido
+' CORRE«√O: a guarda anterior comparava a constante PUBLICO_LABEL_ID
+' contra ela mesma (o prÛprio GUID j· preenchido), o que fazia a
+' condiÁ„o ser SEMPRE verdadeira e a funÁ„o sempre saÌa sem aplicar
+' o rÛtulo. Agora a guarda compara corretamente contra string vazia,
+' que È o valor esperado apenas enquanto o GUID ainda n„o tiver sido
 ' configurado.
 '-----------------------------------------------------------------------
 Private Sub AplicarPerfilPublico(wb As Workbook)
@@ -568,17 +568,17 @@ Private Sub AplicarPerfilPublico(wb As Workbook)
 
     On Error GoTo TratarErroLocal
 
-    Dim lbl As Object ' Office.LabelInfo (vincula√ß√£o tardia)
+    Dim lbl As Object ' Office.LabelInfo (vinculaÁ„o tardia)
     Set lbl = wb.SensitivityLabel.CreateLabelInfo
     lbl.LabelId = PUBLICO_LABEL_ID
     lbl.AssignmentMethod = MSO_ASSIGNMENT_METHOD_STANDARD
-    lbl.Justification = "R√≥tulo aplicado automaticamente na gera√ß√£o do arquivo."
+    lbl.Justification = "RÛtulo aplicado automaticamente na geraÁ„o do arquivo."
 
     wb.SensitivityLabel.SetLabel lbl, lbl
     Exit Sub
 
 TratarErroLocal:
-    Debug.Print "N√£o foi poss√≠vel aplicar o r√≥tulo 'P√∫blica': " & Err.Description
+    Debug.Print "N„o foi possÌvel aplicar o rÛtulo 'P˙blica': " & Err.Description
 End Sub
 
 

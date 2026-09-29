@@ -1,9 +1,9 @@
 let
     Fonte = Excel.CurrentWorkbook(){[Name="tabela_FC_arm"]}[Content],
-    #"Tipo Alterado" = Table.TransformColumnTypes(Fonte,{{"Atividade do painel", type text}, {"Tab. Contrato", type text}, {"DescriÁ„o da tabela", type text}, {"Item", type text}, {"Di‚metro", Int64.Type}, {"A", type number}, {"L", type number}, {"P", type number}, {"FC", type number}}),
+    #"Tipo Alterado" = Table.TransformColumnTypes(Fonte,{{"Atividade do painel", type text}, {"Tab. Contrato", type text}, {"Descri√ß√£o da tabela", type text}, {"Item", type text}, {"Di√¢metro", Int64.Type}, {"A", type number}, {"L", type number}, {"P", type number}, {"FC", type number}}),
     #"Consulta Acrescentada" = Table.Combine({#"Tipo Alterado", tabela_FC_migracao, tabela_FC_digitalizacao}),
-    #"PersonalizaÁ„o Adicionada" = Table.AddColumn(#"Consulta Acrescentada", "cod_Tabela_FC", each [Atividade do painel]
+    #"Personaliza√ß√£o Adicionada" = Table.AddColumn(#"Consulta Acrescentada", "cod_Tabela_FC", each [Atividade do painel]
 &
 [Item])
 in
-    #"PersonalizaÁ„o Adicionada"
+    #"Personaliza√ß√£o Adicionada"

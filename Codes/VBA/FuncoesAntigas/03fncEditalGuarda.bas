@@ -1,17 +1,17 @@
 Attribute VB_Name = "fncEditalGuarda"
 '================================================================================================= ===================
-'M�dulo fun��es do edital de guarda
-'Obs.: Todas as fun��es desenvolvidas conforme edital de guarda externa
+'M?dulo fun??es do edital de guarda
+'Obs.: Todas as fun??es desenvolvidas conforme edital de guarda externa
 '================================================================================================= ===================
  Option Explicit
  
 Function calcular_TSPE_TSPR(sContratoA As String) As String
-'Fun��o para calcular TSPR e TSPE
-'TSPR = Total de solicita��es atendimentos dentro do prazo
-'TSPE = Total de solicita��es atendidas no per�odo
-'Contrato item n� 8.4.2
+'Fun??o para calcular TSPR e TSPE
+'TSPR = Total de solicita??es atendimentos dentro do prazo
+'TSPE = Total de solicita??es atendidas no per?odo
+'Contrato item n? 8.4.2
 
-'VARI�VEIS
+'VARI?VEIS
 Dim iULin      As Integer
 Dim i          As Integer
 Dim sContratoN As String
@@ -26,17 +26,17 @@ Dim j          As Integer
 Dim bEncontrou As Boolean
 Dim iRef       As Integer
 
-iULin = Planilha7.Cells(Planilha7.Rows.Count, 2).End(xlUp).Row '�ltima linha preenchida
+iULin = Planilha7.Cells(Planilha7.Rows.Count, 2).End(xlUp).Row '?ltima linha preenchida
 For i = 3 To iULin
-    sContratoN = Planilha7.Cells(i, 3) 'Descri��o de contrato
-    'Verifica descri��o do contrato
+    sContratoN = Planilha7.Cells(i, 3) 'Descri??o de contrato
+    'Verifica descri??o do contrato
     If sContratoA = sContratoN Then
-        sSituacao = Planilha7.Cells(i, 2) 'Situa��o da solicita��o
+        sSituacao = Planilha7.Cells(i, 2) 'Situa??o da solicita??o
         If sSituacao = "CO" Then
         
             sAtividade = Planilha7.Cells(i, 4) 'Atividade solicitada pelo cliente
             
-            'Pesquisa refer�ncia de servi�o a se calculado
+            'Pesquisa refer?ncia de servi?o a se calculado
             iRef = 0
             j = 2
             bEncontrou = False
@@ -50,13 +50,13 @@ For i = 3 To iULin
             
             Select Case iRef
             
-            Case 1 '(Servi�o de Guarda de Documentos e Informa��es)
+            Case 1 '(Servi?o de Guarda de Documentos e Informa??es)
                 If Planilha7.Cells(i, 19) = "NP" Or Planilha7.Cells(i, 19) = "FP" Then
                     iContTSPE1 = iContTSPE1 + 1
                 End If
                 If Planilha7.Cells(i, 19) = "NP" Then iContTSPR1 = iContTSPR1 + 1
             
-            Case 2 '(Servi�o de Gerenciamento de Documentos e Informa��es)
+            Case 2 '(Servi?o de Gerenciamento de Documentos e Informa??es)
                 If Planilha7.Cells(i, 19) = "NP" Or Planilha7.Cells(i, 19) = "FP" Then
                     iContTSPE2 = iContTSPE2 + 1
                 End If
@@ -64,12 +64,12 @@ For i = 3 To iULin
             
             End Select
             
-            ''==>> Case das vers�es anteriores que n�o estava desprezando o valor "FDM definido"
+            ''==>> Case das vers?es anteriores que n?o estava desprezando o valor "FDM definido"
             'Select Case iRef
-            '    Case 1 '(Servi�o de Guarda de Documentos e Informa��es)
+            '    Case 1 '(Servi?o de Guarda de Documentos e Informa??es)
             '        iContTSPE1 = iContTSPE1 + 1
             '        If Planilha7.Cells(i, 19) = "NP" Then iContTSPR1 = iContTSPR1 + 1
-            '    Case 2 '(Servi�o de Gerenciamento de Documentos e Informa��es)
+            '    Case 2 '(Servi?o de Gerenciamento de Documentos e Informa??es)
             '        iContTSPE2 = iContTSPE2 + 1
             '        If Planilha7.Cells(i, 19) = "NP" Then iContTSPR2 = iContTSPR2 + 1
             'End Select
@@ -83,8 +83,8 @@ calcular_TSPE_TSPR = iContTSPE1 & "|" & iContTSPR1 & "|" & iContTSPE2 & "|" & iC
  End Function
 
 Function calcular_IAPFARQ(iTSPE As Integer, iTSPR As Integer) As Double
-'Fun��o para calcular IAPFARQ (xxxx)
-'Contrato item n� 8.4.2
+'Fun??o para calcular IAPFARQ (xxxx)
+'Contrato item n? 8.4.2
 
 Dim dIAPFARQ As Double
 
@@ -104,8 +104,8 @@ calcular_IAPFARQ = dIAPFARQ
 End Function
 
 Function calcular_FDM(dIAPFARQ As Double) As Double
-'Fun��o para calcular FDM (Fator de Desempenho Mensal)
-'Contrato item n� 8.4.3
+'Fun??o para calcular FDM (Fator de Desempenho Mensal)
+'Contrato item n? 8.4.3
 
 Dim dFDM As Double
 
@@ -125,8 +125,8 @@ calcular_FDM = dFDM
 End Function
 
 Function calcular_QExec(sDrescrAtividade As String, sItem As String, lQtd As Long, sAgrupamento As String) As Double
-'Fun��o para calcular quantidade atendida da guarda externa para efeitos de medi��o
-'Obs.: Ver resultado em: template mem�ria de c�lculo > Planilha DADOS > Coluna AA
+'Fun??o para calcular quantidade atendida da guarda externa para efeitos de medi??o
+'Obs.: Ver resultado em: template mem?ria de c?lculo > Planilha DADOS > Coluna AA
 
 Dim dQExec As Double
 Dim dFC As Double
@@ -292,7 +292,7 @@ calcular_QExec = dQExec
 End Function
 
 Function validarAtividadeOxD(sAtividade As String) As Boolean
-'Fun��o para validar atividade conforme ordem x destino
+'Fun??o para validar atividade conforme ordem x destino
 
 Dim iCont As Integer
 

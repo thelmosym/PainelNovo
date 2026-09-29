@@ -2,10 +2,8 @@ let
     ParametroTabela = Excel.CurrentWorkbook(){[Name="localTabelaB"]}[Content],
     CaminhoTabelaB = Text.From(ParametroTabela{0}[Column1]),
     ArquivoTabelaB = Binary.Buffer(File.Contents(CaminhoTabelaB)),
-
     Fonte = Excel.Workbook(ArquivoTabelaB, null, true),
     Contrato_Table = Fonte{[Item="Contrato", Kind="Table"]}[Data],
-
     #"Tipo Alterado" = Table.TransformColumnTypes(
         Contrato_Table,
         {
@@ -13,12 +11,12 @@ let
             {"Nome Fornecedor", type text},
             {"CNPJ", type text},
             {"Contrato SAP", Int64.Type},
-            {"Instrumento Contratual JurÌdico", Int64.Type},
-            {"Data InÌcio", type date},
-            {"Data TÈrmino", type date},
-            {"Regi„o", type text},
-            {"EndereÁo", type text},
-            {"MunicÌpio", type text},
+            {"Instrumento Contratual Jur√≠dico", Int64.Type},
+            {"Data In√≠cio", type date},
+            {"Data T√©rmino", type date},
+            {"Regi√£o", type text},
+            {"Endere√ßo", type text},
+            {"Munic√≠pio", type text},
             {"UF", type text},
             {"Filial/Matriz", type text}
         }

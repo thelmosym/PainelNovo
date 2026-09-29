@@ -1,5 +1,6 @@
 let
     Fonte = Folder.Files(localMonitIndividualT2M),
-    Navegação1 = Fonte{0}[Content]
+    ArquivosValidos = Table.SelectRows(Fonte, each [Attributes]?[Hidden]? <> true and not Text.StartsWith([Name], "~$") and ([Extension] = ".xlsm" or [Extension] = ".xlsx")),
+    NavegaÃ§Ã£o1 = ArquivosValidos{0}[Content]
 in
-    Navegação1
+    NavegaÃ§Ã£o1

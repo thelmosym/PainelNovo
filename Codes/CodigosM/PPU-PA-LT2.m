@@ -1,9 +1,9 @@
 let
     Fonte = Excel.Workbook(File.Contents(localTabelaB), null, true),
     PPU_Table = Fonte{[Item="PPU",Kind="Table"]}[Data],
-    #"Tipo Alterado" = Table.TransformColumnTypes(PPU_Table,{{"Contrato", type text}, {"Item PPU", type text}, {"Linha de ServiÁo PPU", type text}, {"DescriÁ„o da Linha de ServiÁo", type text}, {"Unidade da Linha de ServiÁo", type text}, {"P. Unit·rio (R$)", type number}}),
+    #"Tipo Alterado" = Table.TransformColumnTypes(PPU_Table,{{"Contrato", type text}, {"Item PPU", type text}, {"Linha de Servi√ßo PPU", type text}, {"Descri√ß√£o da Linha de Servi√ßo", type text}, {"Unidade da Linha de Servi√ßo", type text}, {"P. Unit√°rio (R$)", type number}}),
     #"Linhas Filtradas" = Table.SelectRows(#"Tipo Alterado", each ([Contrato] = "PA-LT2")),
-    #"Tipo Alterado1" = Table.TransformColumnTypes(#"Linhas Filtradas",{{"P. Unit·rio (R$)", Currency.Type}}),
-    #"Colunas Renomeadas" = Table.RenameColumns(#"Tipo Alterado1",{{"Unidade da Linha de ServiÁo", "Unidade"}, {"Linha de ServiÁo PPU", "Linha de ServiÁo"}})
+    #"Tipo Alterado1" = Table.TransformColumnTypes(#"Linhas Filtradas",{{"P. Unit√°rio (R$)", Currency.Type}}),
+    #"Colunas Renomeadas" = Table.RenameColumns(#"Tipo Alterado1",{{"Unidade da Linha de Servi√ßo", "Unidade"}, {"Linha de Servi√ßo PPU", "Linha de Servi√ßo"}})
 in
     #"Colunas Renomeadas"

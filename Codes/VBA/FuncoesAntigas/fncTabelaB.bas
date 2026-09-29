@@ -1,13 +1,13 @@
 Attribute VB_Name = "fncTabelaB"
 '================================================================================================= ===================
-'M�dulo fun��es tabelaB
-'Obs.: Todas as fun��es desenvolvidas na tabela B
+'M?dulo fun??es tabelaB
+'Obs.: Todas as fun??es desenvolvidas na tabela B
 '================================================================================================= ===================
  Option Explicit
 
 
 Public Function pesquisar_centro(sLocalidade As String) As String
-'Fun��o para pesquisar Centro na planilha tabelaB
+'Fun??o para pesquisar Centro na planilha tabelaB
 
 Dim vPesq As Variant
 Dim iColA As Integer
@@ -35,7 +35,7 @@ i = i + 1
 Loop
 
 If bEncontrou = False Then
-    nResultado = "N�o encontrado"
+    nResultado = "N?o encontrado"
 End If
 
 pesquisar_centro = nResultado
@@ -45,7 +45,7 @@ End Function
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 Public Function pesquisar_codCentro(sLocalidade As String) As String
-'Fun��o para pesquisar Centro na planilha tabelaB
+'Fun??o para pesquisar Centro na planilha tabelaB
 
 Dim vPesq As Variant
 Dim iColA As Integer
@@ -58,7 +58,7 @@ Dim nResultado As String
 vPesq = Planilha4.Rows("A1:XFD1").Find("Centro#Centro", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
 iColA = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
 
-vPesq = Planilha4.Rows("A1:XFD1").Find("Centro#C�digo Centro", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+vPesq = Planilha4.Rows("A1:XFD1").Find("Centro#C?digo Centro", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
 iColB = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
 
 bEncontrou = False
@@ -73,7 +73,7 @@ i = i + 1
 Loop
 
 If bEncontrou = False Then
-    nResultado = "N�o encontrado"
+    nResultado = "N?o encontrado"
 End If
 
 pesquisar_codCentro = nResultado
@@ -84,7 +84,7 @@ End Function
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 Function calcular_KMAdicional(sOrigem As String, sDestino As String) As Double
-'Fun��o para c�lculo de KM adicional
+'Fun??o para c?lculo de KM adicional
 
 Dim vPesq As Variant
 Dim iColA As Integer
@@ -148,7 +148,7 @@ End Function
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 Function pesquisar_precoUnitario(sContratoA As String, sLinhaPPU As String) As Double
-'Fun��o para pesquisar pre�o unit�tio conforme contrato e linha de servi�o PPU
+'Fun??o para pesquisar pre?o unit?tio conforme contrato e linha de servi?o PPU
 
 Dim vPesq As Variant
 Dim iColA As Integer
@@ -163,10 +163,10 @@ Dim nResultado As Double
 vPesq = Planilha4.Rows("A1:XFD1").Find("PPU#Contrato", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
 iColA = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
 
-vPesq = Planilha4.Rows("A1:XFD1").Find("PPU#Linha de Servi�o PPU", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+vPesq = Planilha4.Rows("A1:XFD1").Find("PPU#Linha de Servi?o PPU", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
 iColB = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
 
-vPesq = Planilha4.Rows("A1:XFD1").Find("PPU#P. Unit�rio (R$)", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+vPesq = Planilha4.Rows("A1:XFD1").Find("PPU#P. Unit?rio (R$)", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
 iColC = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
 
 bEncontrou = False
@@ -193,8 +193,8 @@ End Function
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 Function pesquisar_grupoMunicipio(sMunicipio As String, sUF As String) As String
-'Fun��o para pesquisar grupo de munic�pio
-'Obs.: A sigla do grupo de munic�pio � refer�ncia para prazo das atividades executadas pela guarda externa
+'Fun??o para pesquisar grupo de munic?pio
+'Obs.: A sigla do grupo de munic?pio ? refer?ncia para prazo das atividades executadas pela guarda externa
 
 Dim vPesq As Variant
 Dim iColA As Integer
@@ -206,7 +206,7 @@ Dim bEncontrou As Boolean
 Dim i As Integer
 Dim nResultado As String
 
-vPesq = Planilha4.Rows("A1:XFD1").Find("Grupo#Munic�pio", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+vPesq = Planilha4.Rows("A1:XFD1").Find("Grupo#Munic?pio", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
 iColA = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
 
 vPesq = Planilha4.Rows("A1:XFD1").Find("Grupo#UF", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
@@ -228,7 +228,7 @@ i = i + 1
 Loop
 
 If bEncontrou = False Then
-    nResultado = "N�o encontrado"
+    nResultado = "N?o encontrado"
 End If
 
 pesquisar_grupoMunicipio = nResultado
@@ -238,7 +238,7 @@ End Function
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 Function pesquisar_EFeriado(dDataInicial As Date, sMunicipio As String, sUF As String) As Boolean
-'Fun��o pesquisa se Data e munic�pio s�o feriados
+'Fun??o pesquisa se Data e munic?pio s?o feriados
 
 
 Dim vPesq As Variant
@@ -252,15 +252,15 @@ Dim bEncontrou As Boolean
 Dim i As Integer
 Dim nResultado As Boolean
 
-'vPesq = Planilha4.Rows("A1:XFD1").Find("Calend�rio#Data", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+'vPesq = Planilha4.Rows("A1:XFD1").Find("Calend?rio#Data", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
 vPesq = Planilha4.Rows("A1:XFD1").Find("Calendario#Data", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
 iColA = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
 
-'vPesq = Planilha4.Rows("A1:XFD1").Find("Calend�rio#Munic�pio", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
-vPesq = Planilha4.Rows("A1:XFD1").Find("Calendario#Munic�pio", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+'vPesq = Planilha4.Rows("A1:XFD1").Find("Calend?rio#Munic?pio", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+vPesq = Planilha4.Rows("A1:XFD1").Find("Calendario#Munic?pio", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
 iColB = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
 
-'vPesq = Planilha4.Rows("A1:XFD1").Find("Calend�rio#UF", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+'vPesq = Planilha4.Rows("A1:XFD1").Find("Calend?rio#UF", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
 vPesq = Planilha4.Rows("A1:XFD1").Find("Calendario#UF", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
 iColC = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
 
@@ -282,7 +282,7 @@ pesquisar_EFeriado = nResultado
 End Function
 
 Function pesquisar_municipio(sCentro As String) As String
-'Fun��o pesquisa munic�pio
+'Fun??o pesquisa munic?pio
 
 
 Dim vPesq As Variant
@@ -296,7 +296,7 @@ Dim nResultado As String
 vPesq = Planilha4.Rows("A1:XFD1").Find("Centro#Centro", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
 iColA = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
 
-vPesq = Planilha4.Rows("A1:XFD1").Find("Centro#Munic�pio", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+vPesq = Planilha4.Rows("A1:XFD1").Find("Centro#Munic?pio", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
 iColB = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
 
 bEncontrou = False
@@ -315,7 +315,7 @@ pesquisar_municipio = nResultado
 End Function
 
 Function pesquisar_uf(sCentro As String) As String
-'Fun��o pesquisa unidade federativa
+'Fun??o pesquisa unidade federativa
 
 
 Dim vPesq As Variant
@@ -348,7 +348,7 @@ pesquisar_uf = nResultado
 End Function
 
 Function pesquisar_descr_contrato(sUF As String) As String
-'Fun��o pesquisa unidade federativa
+'Fun??o pesquisa unidade federativa
 
 
 Dim vPesq As Variant
@@ -381,7 +381,7 @@ pesquisar_descr_contrato = nResultado
 End Function
 
 Public Function validar_centroOrigDest(sCentro As String) As Boolean
-'Fun��o para validar Centro para origem X destino
+'Fun??o para validar Centro para origem X destino
 
 Dim vPesq As Variant
 Dim iColA As Integer
@@ -407,7 +407,7 @@ End Function
 
 
 Public Function validar_municipioCalend(sMunicipio As String) As Boolean
-'Fun��o para validar Munic�pio no calend�rio
+'Fun??o para validar Munic?pio no calend?rio
 
 Dim vPesq As Variant
 Dim iColA As Integer
@@ -416,7 +416,7 @@ Dim iCont As Integer
 Dim nResultado As String
 Dim sIntervalo As String
 
-vPesq = Planilha4.Rows("A1:XFD1").Find("Calendario#Munic�pio", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+vPesq = Planilha4.Rows("A1:XFD1").Find("Calendario#Munic?pio", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
 iColA = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
 
 nResultado = False
@@ -432,7 +432,7 @@ validar_municipioCalend = nResultado
 End Function
 
 Public Function validar_grupoMunicipio(sMunicipio As String) As Boolean
-'Fun��o para validar Munic�pio no calend�rio
+'Fun??o para validar Munic?pio no calend?rio
 
 Dim vPesq As Variant
 Dim iColA As Integer
@@ -441,7 +441,7 @@ Dim iCont As Integer
 Dim nResultado As String
 Dim sIntervalo As String
 
-vPesq = Planilha4.Rows("A1:XFD1").Find("Grupo#Munic�pio", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+vPesq = Planilha4.Rows("A1:XFD1").Find("Grupo#Munic?pio", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
 iColA = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
 
 nResultado = False
@@ -503,7 +503,7 @@ End Select
 End Function
 
 Public Function validar_FDMAnterior(sPerAnt As String, sContrato As String, iItem As Integer) As Double
-'Fun��o para validar FDM anterior do per�odo vigente
+'Fun??o para validar FDM anterior do per?odo vigente
 
 Dim vPesq As Variant
 Dim iColA As Integer
@@ -517,7 +517,7 @@ Dim bEncontrou As Boolean
 Dim nResultado As Double
 Dim i As Integer
 
-vPesq = Planilha4.Rows("A1:XFD1").Find("FDM_IAPFARQ#Medi��o", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+vPesq = Planilha4.Rows("A1:XFD1").Find("FDM_IAPFARQ#Medi??o", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
 iColA = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
 
 vPesq = Planilha4.Rows("A1:XFD1").Find("FDM_IAPFARQ#Contrato", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
@@ -547,7 +547,7 @@ validar_FDMAnterior = nResultado
 End Function
 
 Public Function validar_periodo_anterior(sPerAnterior As String) As Boolean
-'Fun��o para validar per�odo anterior
+'Fun??o para validar per?odo anterior
 
 Dim vPesq As Variant
 Dim iColA As Integer
@@ -556,7 +556,7 @@ Dim iCont As Integer
 Dim nResultado As String
 Dim sIntervalo As String
 
-vPesq = Planilha4.Rows("A1:XFD1").Find("FDM_IAPFARQ#Medi��o", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
+vPesq = Planilha4.Rows("A1:XFD1").Find("FDM_IAPFARQ#Medi??o", LookIn:=xlFormulas, LookAt:=xlWhole).Address(True, True, xlR1C1)
 iColA = informar_coluna(Mid((vPesq), InStr(vPesq, "C")))
 
 nResultado = False

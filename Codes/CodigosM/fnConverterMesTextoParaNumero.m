@@ -1,30 +1,30 @@
 let
     // -------------------------------------------------------------------
     // fnConverterMesTextoParaNumero
-    // -----------------------------------------------------------------
-    // Converte o nome do mês em português (ex.: "Julho") para seu
-    // número correspondente (1 a 12). Necessária porque o parâmetro
-    // PeriodoMes do pipeline está definido como TEXTO (nome do mês),
+    // -------------------------------------------------------------------
+    // Converte o nome do mes em portugues (ex.: "Julho") para seu
+    // numero correspondente (1 a 12). Necessaria porque o parametro
+    // PeriodoMes do pipeline esta definido como TEXTO (nome do mes),
     // enquanto fnCalcularPeriodosAnteriores e fnRecalcularFDM operam
-    // com o mês em formato NUMÉRICO (equivalente ao "iPerMes" do VBA,
-    // que já vinha convertido via Left(Planilha6.Range("C9").Value,2)
-    // na origem — aqui replicamos essa conversão de forma explícita).
+    // com o mes em formato NUMERICO (equivalente ao "iPerMes" do VBA,
+    // que ja vinha convertido via Left(Planilha6.Range("C9").Value,2)
+    // na origem - aqui replicamos essa conversao de forma explicita).
     //
-    // PARÂMETROS:
-    //   mesTexto - nome do mês em português, com a mesma grafia usada
-    //              no parâmetro PeriodoMes (ex.: "Julho")
+    // PARAMETROS:
+    //   mesTexto - nome do mes em portugues, com a mesma grafia usada
+    //              no parametro PeriodoMes (ex.: "Julho")
     //
     // RETORNO:
-    //   number — o número do mês (1 a 12)
+    //   number - o numero do mes (1 a 12)
     //
-    // Lança erro explícito se o texto não corresponder a nenhum dos
+    // Lanca erro explicito se o texto nao corresponder a nenhum dos
     // 12 meses cadastrados (evita falha silenciosa/confusa mais
-    // adiante no cálculo de períodos anteriores).
+    // adiante no calculo de periodos anteriores).
     // -------------------------------------------------------------------
     fnConverterMesTextoParaNumero = (mesTexto as text) as number =>
         let
             Meses = {
-                "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                "Janeiro", "Fevereiro", "MarÃ§o", "Abril", "Maio", "Junho",
                 "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
             },
             Indice = List.PositionOf(Meses, mesTexto)
@@ -32,7 +32,7 @@ let
             if Indice = -1 then
                 error Error.Record(
                     "MesInvalido",
-                    "Mês não reconhecido: '" & mesTexto & "'. Esperado um dos 12 nomes de mês em português (ex.: 'Julho')."
+                    "MÃªs nÃ£o reconhecido: '" & mesTexto & "'. Esperado um dos 12 nomes de mÃªs em portuguÃªs (ex.: 'Julho')."
                 )
             else
                 Indice + 1

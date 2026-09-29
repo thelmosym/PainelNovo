@@ -1,51 +1,50 @@
 let
     // -------------------------------------------------------------------
     // fnCalcularPeriodosAnteriores
-    // -----------------------------------------------------------------
-    // Equivalente M do trecho de cálculo de período anterior presente
-    // dentro de btMCGuardaExterna/btMC_GE_individual (módulo
-    // subMCGuardaExterna) — usado para localizar o FDM histórico dos
-    // 2 meses anteriores ao período vigente (item 8.4.3 do contrato).
+    // -------------------------------------------------------------------
+    // Equivalente M do trecho de calculo de periodo anterior presente
+    // dentro de btMCGuardaExterna/btMC_GE_individual (modulo
+    // subMCGuardaExterna) - usado para localizar o FDM historico dos
+    // 2 meses anteriores ao periodo vigente (item 8.4.3 do contrato).
     //
     // O QUE FAZ:
-    //   Calcula as chaves de período no formato "AAAA#MM" para o mês
-    //   anterior (PerAnt1) e para o mês anterior a esse (PerAnt2),
+    //   Calcula as chaves de periodo no formato "AAAA#MM" para o mes
+    //   anterior (PerAnt1) e para o mes anterior a esse (PerAnt2),
     //   tratando corretamente a VIRADA DE ANO:
     //
-    //   - PerAnt1 (1 mês atrás):
-    //       Se o mês vigente for Janeiro (mes=1), o mês anterior é
+    //   - PerAnt1 (1 mes atras):
+    //       Se o mes vigente for Janeiro (mes=1), o mes anterior e
     //       Dezembro do ANO ANTERIOR.
-    //       Caso contrário, é o mês vigente - 1, no mesmo ano.
+    //       Caso contrario, e o mes vigente - 1, no mesmo ano.
     //
-    //   - PerAnt2 (2 meses atrás):
-    //       Se o mês vigente for Janeiro (mes=1), 2 meses atrás é
+    //   - PerAnt2 (2 meses atras):
+    //       Se o mes vigente for Janeiro (mes=1), 2 meses atras e
     //       Novembro do ANO ANTERIOR.
-    //       Se o mês vigente for Fevereiro (mes=2), 2 meses atrás é
+    //       Se o mes vigente for Fevereiro (mes=2), 2 meses atras e
     //       Dezembro do ANO ANTERIOR.
-    //       Caso contrário, é o mês vigente - 2, no mesmo ano.
+    //       Caso contrario, e o mes vigente - 2, no mesmo ano.
     //
-    // FORMATO DE SAÍDA:
-    //   Cada período é formatado como "AAAA#MM" (ex.: "2026#07"), com
-    //   o mês sempre em 2 dígitos (zero à esquerda quando necessário),
-    //   compatível com a chave usada na tabela histórica FDM_IAPFARQ
-    //   (coluna "Medição").
+    // FORMATO DE SAIDA:
+    //   Cada periodo e formatado como "AAAA#MM" (ex.: "2026#07"), com
+    //   o mes sempre em 2 digitos (zero a esquerda quando necessario),
+    //   compativel com a chave usada na tabela historica FDM_IAPFARQ
+    //   (coluna "Medicao").
     //
-    // PARÂMETROS:
-    //   mes - número do mês vigente (1 a 12)
-    //   ano - número do ano vigente (ex.: 2026)
+    // PARAMETROS:
+    //   mes - numero do mes vigente (1 a 12)
+    //   ano - numero do ano vigente (ex.: 2026)
     //
     // RETORNO:
     //   Um record com 2 campos: [PerAnt1, PerAnt2]
     // -------------------------------------------------------------------
     fnCalcularPeriodosAnteriores = (mes as number, ano as number) as record =>
         let
-            // Calcula o período de 1 mês atrás, tratando virada de ano
+            // Calcula o periodo de 1 mes atras, tratando virada de ano
             PerAnt1 = if mes - 1 = 0
                 then Text.From(ano - 1) & "#12"
                 else Text.From(ano) & "#" & Text.PadStart(Text.From(mes - 1), 2, "0"),
-
-            // Calcula o período de 2 meses atrás, tratando virada de ano
-            // (2 casos possíveis: mês vigente = Janeiro ou Fevereiro)
+            // Calcula o periodo de 2 meses atras, tratando virada de ano
+            // (2 casos possiveis: mes vigente = Janeiro ou Fevereiro)
             PerAnt2 = if mes - 2 = -1
                 then Text.From(ano - 1) & "#11"
                 else if mes - 2 = 0

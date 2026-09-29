@@ -5,6 +5,6 @@ let
     #"Colunas Removidas" = Table.RemoveColumns(#"Tipo Alterado",{"DE_LocalCentro", "DE_RegMetrop", "DE_Tipo", "DE_Logradouro", "DE_CEP", "DE_Bairro", "DE_Cidade", "DE_UF", "PARA_RegMetrop", "KM"}),
     #"Duplicatas Removidas" = Table.Distinct(#"Colunas Removidas", {"PARA_LocalCentro"}),
     #"Colunas Removidas1" = Table.RemoveColumns(#"Duplicatas Removidas",{"PARA_Tipo"}),
-    #"Colunas Renomeadas" = Table.RenameColumns(#"Colunas Removidas1",{{"PARA_LocalCentro", "Galp„p"}, {"PARA_Logradouro", "Galp„p_Logradouro"}, {"PARA_CEP", "Galp„p_CEP"}, {"PARA_Bairro", "Galp„p_Bairro"}, {"PARA_Cidade", "Galp„p_Cidade"}, {"PARA_UF", "Galp„p_UF"}})
+    #"Colunas Renomeadas" = Table.RenameColumns(#"Colunas Removidas1",{{"PARA_LocalCentro", "Galp√£p"}, {"PARA_Logradouro", "Galp√£p_Logradouro"}, {"PARA_CEP", "Galp√£p_CEP"}, {"PARA_Bairro", "Galp√£p_Bairro"}, {"PARA_Cidade", "Galp√£p_Cidade"}, {"PARA_UF", "Galp√£p_UF"}})
 in
     #"Colunas Renomeadas"

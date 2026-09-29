@@ -1,34 +1,52 @@
 Attribute VB_Name = "modDashboard"
 Option Explicit
 
-Private Const NOME_DASHBOARD As String = "DASHBOARD"
-Private Const NOME_DADOS As String = "DADOS"
-Private Const NOME_PAINEL As String = "Painel"
-Private Const COR_VERDE As Long = 54784
-Private Const COR_VERDE_ESCURO As Long = 37888
-Private Const COR_VERDE_CLARO As Long = 13434828
-Private Const COR_CINZA As Long = 15921906
-Private Const COR_CINZA_TEXTO As Long = 5921370
-Private Const COR_AMBAR As Long = 49407
-Private Const COR_VERMELHO As Long = 255
+'====================================================================================================
+' M”DULO: modDashboard
+' OBJETIVO: ConstrÛi e atualiza dinamicamente a aba executiva 'DASHBOARD' com cards de indicadores,
+'           resumo volumÈtrico consolidado por contrato e alertas de faturamento.
+' PADR’ES:  Processamento otimizado com ScreenUpdating/Calculation controlado e tratamento seguro.
+'====================================================================================================
 
+Private Const NOME_DASHBOARD    As String = "DASHBOARD"
+Private Const NOME_DADOS        As String = "DADOS"
+Private Const NOME_PAINEL       As String = "Painel"
+
+' Cores corporativas para identidade visual
+Private Const COR_VERDE         As Long = 54784
+Private Const COR_VERDE_ESCURO  As Long = 37888
+Private Const COR_VERDE_CLARO   As Long = 13434828
+Private Const COR_CINZA         As Long = 15921906
+Private Const COR_CINZA_TEXTO   As Long = 5921370
+Private Const COR_AMBAR         As Long = 49407
+Private Const COR_VERMELHO      As Long = 255
+
+'----------------------------------------------------------------------------------------------------
+' PONTOS DE ENTRADA P⁄BLICOS
+'----------------------------------------------------------------------------------------------------
 Public Sub CriarDashboard()
-    Dim ws As Worksheet
-    Dim wsDados As Worksheet
-    Dim ultimaLinha As Long
-    Dim colContrato As Long
-    Dim colSolicitada As Long
-    Dim colAtendida As Long
-    Dim colQExec As Long
-    Dim colPrazo As Long
-    Dim colFechamento As Long
-    Dim totalRegistros As Long
-    Dim totalSolicitada As Double
-    Dim totalAtendida As Double
-    Dim totalQExec As Double
-    Dim totalForaPrazo As Long
+    Dim ws              As Worksheet
+    Dim wsDados         As Worksheet
+    Dim ultimaLinha     As Long
+    Dim colContrato     As Long, colSolicitada As Long, colAtendida As Long
+    Dim colQExec        As Long, colPrazo As Long, colFechamento As Long
+    Dim totalRegistros  As Long
+    Dim totalSolicitada As Double, totalAtendida As Double, totalQExec As Double
+    Dim totalForaPrazo  As Long
+    
+    Dim appCalc         As XlCalculation
+    Dim bEvents         As Boolean
+    Dim bScreen         As Boolean
 
     On Error GoTo TratarErro
+    
+    appCalc = Application.Calculation
+    bEvents = Application.EnableEvents
+    bScreen = Application.ScreenUpdating
+    
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.Calculation = xlCalculationManual
 
     Set ws = ObterOuCriarDashboard()
     Set wsDados = ObterPlanilha(NOME_DADOS)
@@ -46,11 +64,11 @@ Public Sub CriarDashboard()
     If Not wsDados Is Nothing Then
         ultimaLinha = UltimaLinhaDados(wsDados)
         colContrato = EncontrarCabecalho(wsDados, "Contrato")
-        colSolicitada = EncontrarCabecalho(wsDados, "Qtd. Solicitada", "Qtd. Solicitada", "Qtd. Solicitada")
-        colAtendida = EncontrarCabecalho(wsDados, "Qtd. Atendida", "Qtd. Atendida", "Qtd. Atendida")
+        colSolicitada = EncontrarCabecalho(wsDados, "Qtd. Solicitada", "Qtd Solicitada", "Qtd._x000a_Solicitada")
+        colAtendida = EncontrarCabecalho(wsDados, "Qtd. Atendida", "Qtd Atendida", "Qtd._x000a_Atendida")
         colQExec = EncontrarCabecalho(wsDados, "QExec")
         colPrazo = EncontrarCabecalho(wsDados, "Data SLA", "Prazo SLA")
-        colFechamento = EncontrarCabecalho(wsDados, "D. fechamento", "Data fechamento")
+        colFechamento = EncontrarCabecalho(wsDados, "D. fechamento", "Data fechamento", "Data Fechamento")
 
         If ultimaLinha > 1 Then
             totalRegistros = ultimaLinha - 1
@@ -70,12 +88,21 @@ Public Sub CriarDashboard()
     AtualizarResumoContratos ws, wsDados
     AtualizarAlertas ws, totalRegistros, totalSolicitada - totalAtendida, totalForaPrazo
 
+SairRotina:
+    Application.Calculation = appCalc
+    Application.EnableEvents = bEvents
+    Application.ScreenUpdating = bScreen
+    
+    On Error Resume Next
     ws.Activate
-    MsgBox "A aba DASHBOARD foi criada/atualizada.", vbInformation, "Dashboard"
+    On Error GoTo 0
+    
+    MsgBox "A aba DASHBOARD foi criada/atualizada com sucesso.", vbInformation, "Dashboard"
     Exit Sub
 
 TratarErro:
-    MsgBox "Nao foi possivel criar o dashboard:" & vbCrLf & Err.Number & " - " & Err.Description, vbCritical, "Dashboard"
+    MsgBox "N„o foi possÌvel criar o dashboard:" & vbCrLf & Err.Number & " - " & Err.Description, vbCritical, "Dashboard"
+    Resume SairRotina
 End Sub
 
 Public Sub AtualizarDashboard()
@@ -83,30 +110,38 @@ Public Sub AtualizarDashboard()
 End Sub
 
 Private Sub CriarDashboardSemMensagem()
-    Dim ws As Worksheet
-    Dim wsDados As Worksheet
-    Dim ultimaLinha As Long
-    Dim colSolicitada As Long
-    Dim colAtendida As Long
-    Dim colQExec As Long
-    Dim colPrazo As Long
-    Dim colFechamento As Long
-    Dim totalRegistros As Long
-    Dim totalSolicitada As Double
-    Dim totalAtendida As Double
-    Dim totalQExec As Double
-    Dim totalForaPrazo As Long
+    Dim ws              As Worksheet
+    Dim wsDados         As Worksheet
+    Dim ultimaLinha     As Long
+    Dim colSolicitada   As Long, colAtendida As Long, colQExec As Long
+    Dim colPrazo        As Long, colFechamento As Long
+    Dim totalRegistros  As Long
+    Dim totalSolicitada As Double, totalAtendida As Double, totalQExec As Double
+    Dim totalForaPrazo  As Long
+    
+    Dim appCalc         As XlCalculation
+    Dim bEvents         As Boolean
+    Dim bScreen         As Boolean
 
     Set ws = ObterOuCriarDashboard()
     Set wsDados = ObterPlanilha(NOME_DADOS)
     If wsDados Is Nothing Then Exit Sub
 
+    appCalc = Application.Calculation
+    bEvents = Application.EnableEvents
+    bScreen = Application.ScreenUpdating
+    
+    On Error GoTo SairSilencioso
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.Calculation = xlCalculationManual
+
     ultimaLinha = UltimaLinhaDados(wsDados)
-    colSolicitada = EncontrarCabecalho(wsDados, "Qtd. Solicitada", "Qtd. Solicitada", "Qtd. Solicitada")
-    colAtendida = EncontrarCabecalho(wsDados, "Qtd. Atendida", "Qtd. Atendida", "Qtd. Atendida")
+    colSolicitada = EncontrarCabecalho(wsDados, "Qtd. Solicitada", "Qtd Solicitada", "Qtd._x000a_Solicitada")
+    colAtendida = EncontrarCabecalho(wsDados, "Qtd. Atendida", "Qtd Atendida", "Qtd._x000a_Atendida")
     colQExec = EncontrarCabecalho(wsDados, "QExec")
     colPrazo = EncontrarCabecalho(wsDados, "Data SLA", "Prazo SLA")
-    colFechamento = EncontrarCabecalho(wsDados, "D. fechamento", "Data fechamento")
+    colFechamento = EncontrarCabecalho(wsDados, "D. fechamento", "Data fechamento", "Data Fechamento")
 
     If ultimaLinha > 1 Then
         totalRegistros = ultimaLinha - 1
@@ -123,9 +158,17 @@ Private Sub CriarDashboardSemMensagem()
     ws.Range("L10").Value = totalForaPrazo
     AtualizarResumoContratos ws, wsDados
     AtualizarAlertas ws, totalRegistros, totalSolicitada - totalAtendida, totalForaPrazo
-    ws.Range("B4").Value = "Ultima atualizacao: " & Format(Now, "dd/mm/yyyy hh:mm")
+    ws.Range("B4").Value = "Periodo de medicao: " & TextoPeriodo() & "    |    Ultima atualizacao: " & Format(Now, "dd/mm/yyyy hh:mm")
+
+SairSilencioso:
+    Application.Calculation = appCalc
+    Application.EnableEvents = bEvents
+    Application.ScreenUpdating = bScreen
 End Sub
 
+'----------------------------------------------------------------------------------------------------
+' ROTINAS DE CONSTRU«√O DE LAYOUT
+'----------------------------------------------------------------------------------------------------
 Private Function ObterOuCriarDashboard() As Worksheet
     On Error Resume Next
     Set ObterOuCriarDashboard = ThisWorkbook.Worksheets(NOME_DASHBOARD)
@@ -154,6 +197,7 @@ Private Sub PrepararFolha(ByVal ws As Worksheet)
     ws.Cells.Font.Name = "Segoe UI"
     ws.Cells.Font.Size = 10
     ws.Cells.Interior.Color = RGB(244, 246, 248)
+    
     ws.Columns("A").ColumnWidth = 2
     ws.Columns("B").ColumnWidth = 18
     ws.Columns("C").ColumnWidth = 3
@@ -168,10 +212,14 @@ Private Sub PrepararFolha(ByVal ws As Worksheet)
     ws.Columns("L").ColumnWidth = 18
     ws.Columns("M").ColumnWidth = 3
     ws.Columns("N").ColumnWidth = 20
+    
     ws.Rows("1:40").RowHeight = 18
     ws.Rows("1:3").RowHeight = 24
     ws.Range("A1:N40").VerticalAlignment = xlCenter
+    
+    On Error Resume Next
     ActiveWindow.DisplayGridlines = False
+    On Error GoTo 0
 End Sub
 
 Private Sub ConstruirCabecalho(ByVal ws As Worksheet)
@@ -221,7 +269,7 @@ End Sub
 Private Sub ConstruirCards(ByVal ws As Worksheet)
     Dim rotulos As Variant
     Dim colunas As Variant
-    Dim i As Long
+    Dim i       As Long
 
     rotulos = Array("REGISTROS", "QTD. SOLICITADA", "QTD. ATENDIDA", "QEXEC TOTAL", "CONTRATOS", "FORA DO PRAZO")
     colunas = Array("B", "D", "F", "H", "J", "L")
@@ -324,13 +372,13 @@ Private Sub EscreverCabecalhoArquivos(ByVal ws As Worksheet)
 End Sub
 
 Private Sub AtualizarResumoContratos(ByVal wsDash As Worksheet, ByVal wsDados As Worksheet)
-    Dim contratos As Variant
-    Dim i As Long
+    Dim contratos   As Variant
+    Dim i           As Long
     Dim colContrato As Long
     Dim ultimaLinha As Long
-    Dim linha As Long
-    Dim contrato As String
-    Dim qtd As Long
+    Dim linha       As Long
+    Dim contrato    As String
+    Dim qtd         As Long
 
     If wsDados Is Nothing Then Exit Sub
     contratos = Array("PA-LT2", "IRON-LT1-RJ", "IRON-LT1-SP", "IRON-LT1-ES")
@@ -362,11 +410,10 @@ Private Function UltimaLinhaDados(ByVal ws As Worksheet) As Long
 End Function
 
 Private Function EncontrarCabecalho(ByVal ws As Worksheet, ParamArray nomes()) As Long
-    Dim nome As Variant
-    Dim celula As Range
+    Dim nome        As Variant
     Dim ultimaColuna As Long
-    Dim coluna As Long
-    Dim texto As String
+    Dim coluna      As Long
+    Dim texto       As String
 
     ultimaColuna = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
     For Each nome In nomes
@@ -441,7 +488,7 @@ End Sub
 
 Public Sub AbrirPastaMedicao()
     Dim caminho As String
-    caminho = ThisWorkbook.Path & Application.PathSeparator & "MEDI√á√ÉO"
+    caminho = ThisWorkbook.Path & Application.PathSeparator & "MEDI«√O"
     If Dir(caminho, vbDirectory) = "" Then MkDir caminho
     Shell "explorer.exe """ & caminho & """", vbNormalFocus
 End Sub

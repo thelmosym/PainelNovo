@@ -32,11 +32,11 @@
                 'Funcionalidade Centro
                 wsTempl_DADOS.Cells(iULin, 29) = sCentro
                 
-                'Funcionalidade C√≥digo Centro
-                'Obs.: Vari√°vel sCentro utilizada da pesquisa anterior
+                'Funcionalidade CÛdigo Centro
+                'Obs.: Vari·vel sCentro utilizada da pesquisa anterior
                 wsTempl_DADOS.Cells(iULin, 30) = pesquisar_codCentro(sCentro)
                 
-                'Funcionalidade Linha de servi√ßo PPU
+                'Funcionalidade Linha de serviÁo PPU
                 wsTempl_DADOS.Cells(iULin, 31) = sLinhaPPU
 
 

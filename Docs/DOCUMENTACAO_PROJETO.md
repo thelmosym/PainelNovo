@@ -377,7 +377,7 @@ Executam exportações do fluxo legado. O procedimento `ExportarDadosParaNovoArq
 
 ### 8.1 Atualização das consultas
 
-O módulo [Codes/VBA/Funções Novas/Modulo2.vba](Codes/VBA/Fun%C3%A7%C3%B5es%20Novas/Modulo2.vba) contém `AtualizarTodasConsultasPowerQuery`.
+O módulo [Codes/VBA/Funções Novas/modAtualizarConsultas.bas](Codes/VBA/Fun%C3%A7%C3%B5es%20Novas/modAtualizarConsultas.bas) contém `AtualizarTodasConsultasPowerQuery`.
 
 A rotina:
 
@@ -402,7 +402,7 @@ Pontos de atenção:
 
 ### 8.2 Geração de arquivos por contrato
 
-O módulo [Codes/VBA/Funções Novas/modulo1.vba](Codes/VBA/Fun%C3%A7%C3%B5es%20Novas/modulo1.vba) contém `GerarArquivosPorContrato`.
+O módulo [Codes/VBA/Funções Novas/modGerarArquivos.bas](Codes/VBA/Fun%C3%A7%C3%B5es%20Novas/modGerarArquivos.bas) contém `GerarArquivosPorContrato`.
 
 Contratos configurados no código:
 

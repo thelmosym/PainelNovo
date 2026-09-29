@@ -1,71 +1,66 @@
 let
     Fonte = #"Painel T2M",
-
-    // Table.SelectColumns seleciona E reordena em uma única operação —
+    // Table.SelectColumns seleciona E reordena em uma unica operacao -
     // substitui os 3 passos de Table.ReorderColumns + os 2 passos de
-    // Table.RemoveColumns do código original. "Obs. Sigla" já é
-    // excluída aqui diretamente — no original ela era renomeada para
-    // "Obs." e só depois removida, desperdiçando processamento.
+    // Table.RemoveColumns do codigo original. "Obs. Sigla" ja e
+    // excluida aqui diretamente - no original ela era renomeada para
+    // "Obs." e so depois removida, desperdicando processamento.
     ColunasSelecionadas = Table.SelectColumns(Fonte, {
         "Contrato.1",
-        "Descrição da atividade", "Item", "Aplicação",
-        "Código da#(lf)solicitação", "Data solicitação", "Gerência solicitante",
-        "Qtd.#(lf)Solicitada", "Código OS", "D. abertura", "D. fechamento",
+        "DescriÃ§Ã£o da atividade", "Item", "AplicaÃ§Ã£o",
+        "CÃ³digo da#(lf)solicitaÃ§Ã£o", "Data solicitaÃ§Ã£o", "GerÃªncia solicitante",
+        "Qtd.#(lf)Solicitada", "CÃ³digo OS", "D. abertura", "D. fechamento",
         "Prazo combinado", "Qtd.#(lf)Atendida",
-        "Classificação FDM", "Status Prazo",
-        "Centro", "Município", "UF",
-        "Galpão", "Galpãp_Cidade", "Galpãp_UF",
+        "ClassificaÃ§Ã£o FDM", "Status Prazo",
+        "Centro", "MunicÃ­pio", "UF",
+        "GalpÃ£o", "GalpÃ£p_Cidade", "GalpÃ£p_UF",
         "KM Adicional", "FC", "QExecAgrupado","QExec",
-        "Unidade", "Localidade", "Código Centro", "Linha de serviço PPU"
+        "Unidade", "Localidade", "CÃ³digo Centro", "Linha de serviÃ§o PPU"
     }),
-
-    // As 10 renomeações combinadas em UMA única chamada (o original
+    // As 10 renomeacoes combinadas em UMA unica chamada (o original
     // fazia isso em 6 chamadas separadas de RenameColumns, cada uma
-    // intercalada com uma reordenação completa desnecessária)
+    // intercalada com uma reordenacao completa desnecessaria)
     ColunasRenomeadas = Table.RenameColumns(ColunasSelecionadas, {
         {"Centro", "Localidade - Origem"},
-        {"Município", "Município - Origem"},
+        {"MunicÃ­pio", "MunicÃ­pio - Origem"},
         {"UF", "UF - Origem"},
-        {"Galpão", "Localidade - Destino"},
-        {"Galpãp_Cidade", "Município - Destino"},
-        {"Galpãp_UF", "UF - Destino"},
+        {"GalpÃ£o", "Localidade - Destino"},
+        {"GalpÃ£p_Cidade", "MunicÃ­pio - Destino"},
+        {"GalpÃ£p_UF", "UF - Destino"},
         {"Localidade", "Centro"},
-        {"Classificação FDM", "Classificação"},
+        {"ClassificaÃ§Ã£o FDM", "ClassificaÃ§Ã£o"},
         {"Status Prazo", "FDM"}
     }),
-
     // Colunas de preenchimento manual pelo analista (Agrupamento, FA,
-    // Obs. Isenção) — usando null com tipo explícito, em vez de ""
-    // (texto vazio) do original. Isso é semanticamente mais correto
-    // para "ainda não preenchido" e evita erro de tipagem quando a
-    // coluna FA (numérica) for usada em cálculos futuros.
+    // Obs. Isencao) - usando null com tipo explicito, em vez de ""
+    // (texto vazio) do original. Isso e semanticamente mais correto
+    // para "ainda nao preenchido" e evita erro de tipagem quando a
+    // coluna FA (numerica) for usada em calculos futuros.
     AdicionarAgrupamento = Table.AddColumn(ColunasRenomeadas, "Agrupamento", each null, type text),
     AdicionarFA = Table.AddColumn(AdicionarAgrupamento, "FA", each null, type number),
-    AdicionarObsIsencao = Table.AddColumn(AdicionarFA, "Obs. Isenção", each null, type text),
-
-    // Reordenação final ÚNICA — intercala as 3 colunas manuais nas
-    // posições corretas em relação às colunas já selecionadas.
+    AdicionarObsIsencao = Table.AddColumn(AdicionarFA, "Obs. IsenÃ§Ã£o", each null, type text),
+    // Reordenacao final UNICA - intercala as 3 colunas manuais nas
+    // posicoes corretas em relacao as colunas ja selecionadas.
     // ? "Contrato" agora posicionada como PRIMEIRA coluna da tabela,
     // conforme solicitado.
     ColunasFinal = Table.ReorderColumns(AdicionarObsIsencao, {
         "Contrato.1",
-        "Descrição da atividade", "Item", "Aplicação",
-        "Código da#(lf)solicitação", "Data solicitação", "Gerência solicitante",
-        "Qtd.#(lf)Solicitada", "Código OS", "D. abertura", "D. fechamento",
+        "DescriÃ§Ã£o da atividade", "Item", "AplicaÃ§Ã£o",
+        "CÃ³digo da#(lf)solicitaÃ§Ã£o", "Data solicitaÃ§Ã£o", "GerÃªncia solicitante",
+        "Qtd.#(lf)Solicitada", "CÃ³digo OS", "D. abertura", "D. fechamento",
         "Prazo combinado", "Qtd.#(lf)Atendida",
-        "Agrupamento", "Classificação", "FDM", "Obs. Isenção", "FA",
-        "Localidade - Origem", "Município - Origem", "UF - Origem",
-        "Localidade - Destino", "Município - Destino", "UF - Destino",
+        "Agrupamento", "ClassificaÃ§Ã£o", "FDM", "Obs. IsenÃ§Ã£o", "FA",
+        "Localidade - Origem", "MunicÃ­pio - Origem", "UF - Origem",
+        "Localidade - Destino", "MunicÃ­pio - Destino", "UF - Destino",
         "KM Adicional", "FC", "QExec",
-        "Unidade", "Centro", "Código Centro", "Linha de serviço PPU"
+        "Unidade", "Centro", "CÃ³digo Centro", "Linha de serviÃ§o PPU"
     }),
-
-    // ? Table.Buffer no resultado final — materializa a tabela em
-    // memória uma única vez, evitando reprocessar toda a cadeia acima
-    // (que já depende do buffer final de #"Painel T2M") caso esta
+    // ? Table.Buffer no resultado final - materializa a tabela em
+    // memoria uma unica vez, evitando reprocessar toda a cadeia acima
+    // (que ja depende do buffer final de #"Painel T2M") caso esta
     // consulta "DADOS" seja referenciada por outras consultas (ex.:
     // SaidaMEDICAO) mais de uma vez.
     ResultadoFinalBuffer = Table.Buffer(ColunasFinal),
-    #"Colunas Reordenadas" = Table.ReorderColumns(ResultadoFinalBuffer,{"Contrato.1", "Descrição da atividade", "Item", "Aplicação", "Código da#(lf)solicitação", "Data solicitação", "Gerência solicitante", "Qtd.#(lf)Solicitada", "Código OS", "D. abertura", "D. fechamento", "Prazo combinado", "Qtd.#(lf)Atendida", "Agrupamento", "Classificação", "FDM", "Obs. Isenção", "FA", "Localidade - Origem", "Município - Origem", "UF - Origem", "Localidade - Destino", "Município - Destino", "UF - Destino", "KM Adicional", "FC", "Unidade", "Centro", "Código Centro", "Linha de serviço PPU", "QExec", "QExecAgrupado"})
+    #"Colunas Reordenadas" = Table.ReorderColumns(ResultadoFinalBuffer,{"Contrato.1", "DescriÃ§Ã£o da atividade", "Item", "AplicaÃ§Ã£o", "CÃ³digo da#(lf)solicitaÃ§Ã£o", "Data solicitaÃ§Ã£o", "GerÃªncia solicitante", "Qtd.#(lf)Solicitada", "CÃ³digo OS", "D. abertura", "D. fechamento", "Prazo combinado", "Qtd.#(lf)Atendida", "Agrupamento", "ClassificaÃ§Ã£o", "FDM", "Obs. IsenÃ§Ã£o", "FA", "Localidade - Origem", "MunicÃ­pio - Origem", "UF - Origem", "Localidade - Destino", "MunicÃ­pio - Destino", "UF - Destino", "KM Adicional", "FC", "Unidade", "Centro", "CÃ³digo Centro", "Linha de serviÃ§o PPU", "QExec", "QExecAgrupado"})
 in
     #"Colunas Reordenadas"

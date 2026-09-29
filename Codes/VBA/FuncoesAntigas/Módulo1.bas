@@ -1,4 +1,4 @@
-Attribute VB_Name = "M�dulo1"
+Attribute VB_Name = "M?dulo1"
 
 ' Exporta as principais guias da medicao para um novo arquivo Excel.
 ' O arquivo gerado recebe um nome baseado nos dados da medicao e e salvo
@@ -29,7 +29,7 @@ Sub ExportarDadosParaNovoArquivoAdaptado()
     ' Le os valores usados para montar o nome do arquivo exportado.
     valorD5 = wsMC.Range("D5").Value
     valorJ5 = wsMC.Range("J5").Value
-    valorG6 = ThisWorkbook.Sheets(1).Range("G6").Value ' Assumindo que G6 est� na primeira planilha
+    valorG6 = ThisWorkbook.Sheets(1).Range("G6").Value ' Assumindo que G6 est? na primeira planilha
     valorE6 = ThisWorkbook.Sheets(1).Range("E6").Value
     
     ' Gera um identificador de data e hora para evitar nomes repetidos.
@@ -44,7 +44,7 @@ Sub ExportarDadosParaNovoArquivoAdaptado()
     
     ' Encerra o procedimento sem criar arquivo quando a operacao e cancelada.
     If caminhoSalvar = "False" Then
-        MsgBox "Opera��o cancelada.", vbInformation, "Cancelado"
+        MsgBox "Opera??o cancelada.", vbInformation, "Cancelado"
         Exit Sub
     End If
     
@@ -72,7 +72,7 @@ Sub ExportarDadosParaNovoArquivoAdaptado()
     Set wsPlanilha1 = novoArquivo.Sheets("Planilha1")
     On Error GoTo 0
     If Not wsPlanilha1 Is Nothing Then
-        Application.DisplayAlerts = False ' Desativa os alertas para evitar a confirma��o de exclus�o
+        Application.DisplayAlerts = False ' Desativa os alertas para evitar a confirma??o de exclus?o
         wsPlanilha1.Delete
         Application.DisplayAlerts = True ' Reativa os alertas
     End If

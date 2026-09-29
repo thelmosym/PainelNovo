@@ -1,5 +1,5 @@
 let
     Fonte = Excel.CurrentWorkbook(){[Name="valEnderecoGalpao"]}[Content],
-    #"Tipo Alterado" = Table.TransformColumnTypes(Fonte,{{"Galp„p", type text}, {"Galp„p_Logradouro", type text}, {"Galp„p_CEP", type text}, {"Galp„p_Bairro", type text}, {"Galp„p_Cidade", type text}, {"Galp„p_UF", type text}})
+    #"Tipo Alterado" = Table.TransformColumnTypes(Fonte,{{"Galp√£p", type text}, {"Galp√£p_Logradouro", type text}, {"Galp√£p_CEP", type text}, {"Galp√£p_Bairro", type text}, {"Galp√£p_Cidade", type text}, {"Galp√£p_UF", type text}})
 in
     #"Tipo Alterado"

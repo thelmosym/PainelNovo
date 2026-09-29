@@ -1,36 +1,36 @@
 Option Explicit
 
 '-----------------------------------------------------------------------
-' M√ìDULO: modAtualizarConsultas
+' M”DULO: modAtualizarConsultas
 '---------------------------------------------------------------------
-' For√ßa a atualiza√ß√£o S√çNCRONA de todas as conex√µes/consultas Power
-' Query do workbook (uma por vez), exibindo o progresso em uma C√âLULA
-' espec√≠fica da planilha ‚Äî com a cor de fundo mudando conforme o
+' ForÁa a atualizaÁ„o SÕNCRONA de todas as conexıes/consultas Power
+' Query do workbook (uma por vez), exibindo o progresso em uma C…LULA
+' especÌfica da planilha ó com a cor de fundo mudando conforme o
 ' status:
-'   ?? AMARELO  ? atualiza√ß√£o em andamento
-'   ?? VERDE    ? conclu√≠do com sucesso (mostra data/hora de conclus√£o)
-'   ?? VERMELHO ? conclu√≠do com erro fatal (interrompeu antes do fim)
-' Ao final, exibe tamb√©m uma mensagem (MsgBox) com o resumo completo.
+'   ?? AMARELO  ? atualizaÁ„o em andamento
+'   ?? VERDE    ? concluÌdo com sucesso (mostra data/hora de conclus„o)
+'   ?? VERMELHO ? concluÌdo com erro fatal (interrompeu antes do fim)
+' Ao final, exibe tambÈm uma mensagem (MsgBox) com o resumo completo.
 '
-' Associe esta macro (AtualizarTodasConsultasPowerQuery) a um bot√£o
-' via: Inserir > Formas/Bot√£o > Bot√£o direito > Atribuir Macro.
+' Associe esta macro (AtualizarTodasConsultasPowerQuery) a um bot„o
+' via: Inserir > Formas/Bot„o > Bot„o direito > Atribuir Macro.
 '-----------------------------------------------------------------------
 
-Private Const MSG_TITULO_ATUALIZACAO As String = "Atualiza√ß√£o de Consultas Power Query"
+Private Const MSG_TITULO_ATUALIZACAO As String = "AtualizaÁ„o de Consultas Power Query"
 
-' ?? AJUSTE AQUI ‚Äî aba e c√©lula onde o status ser√° exibido
+' ?? AJUSTE AQUI ó aba e cÈlula onde o status ser· exibido
 Private Const NOME_PLANILHA_STATUS As String = "Painel"   ' nome da aba
-Private Const ENDERECO_CELULA_STATUS As String = "B12"   ' endere√ßo da c√©lula
+Private Const ENDERECO_CELULA_STATUS As String = "B12"   ' endereÁo da cÈlula
 
-' ?? Cores de status (RGB) ‚Äî ajuste os tons se preferir outra tonalidade
+' ?? Cores de status (RGB) ó ajuste os tons se preferir outra tonalidade
 Private Const COR_AMARELO As Long = 65535        ' RGB(255,255,0)
-Private Const COR_VERDE   As Long = 5296274      ' RGB(146, 208, 80) ‚Äî verde suave
+Private Const COR_VERDE   As Long = 5296274      ' RGB(146, 208, 80) ó verde suave
 Private Const COR_VERMELHO As Long = 255         ' RGB(255,0,0)
 Private Const COR_PADRAO_SEM_PREENCHIMENTO As Long = -4142 ' xlColorIndexNone equivalente
 
 
 '-----------------------------------------------------------------------
-' PROCEDIMENTO PRINCIPAL ‚Äî associar este ao bot√£o
+' PROCEDIMENTO PRINCIPAL ó associar este ao bot„o
 '-----------------------------------------------------------------------
 Public Sub AtualizarTodasConsultasPowerQuery()
 
@@ -52,25 +52,25 @@ Public Sub AtualizarTodasConsultasPowerQuery()
     iTotal = wb.Connections.Count
 
     If iTotal = 0 Then
-        MsgBox "Nenhuma conex√£o/consulta Power Query foi encontrada neste arquivo.", _
+        MsgBox "Nenhuma conex„o/consulta Power Query foi encontrada neste arquivo.", _
                vbInformation, MSG_TITULO_ATUALIZACAO
         Exit Sub
     End If
 
-    '-- Localiza (ou cria, se n√£o existir) a c√©lula de status ------------
+    '-- Localiza (ou cria, se n„o existir) a cÈlula de status ------------
     Set wsStatus = ObterPlanilhaStatus(wb, NOME_PLANILHA_STATUS)
     Set rngStatus = wsStatus.Range(ENDERECO_CELULA_STATUS)
 
-    '-- Confirma√ß√£o antes de iniciar --------------------------------------
-    If MsgBox("Ser√£o atualizadas " & iTotal & " conex√£o(√µes)/consulta(s)." & _
-              vbNewLine & vbNewLine & "O progresso ser√° exibido na c√©lula " & _
+    '-- ConfirmaÁ„o antes de iniciar --------------------------------------
+    If MsgBox("Ser„o atualizadas " & iTotal & " conex„o(ıes)/consulta(s)." & _
+              vbNewLine & vbNewLine & "O progresso ser· exibido na cÈlula " & _
               wsStatus.Name & "!" & ENDERECO_CELULA_STATUS & "." & vbNewLine & vbNewLine & _
               "INICIAR?", vbYesNo + vbQuestion, MSG_TITULO_ATUALIZACAO) = vbNo Then
-        MsgBox "Atualiza√ß√£o cancelada.", vbInformation, MSG_TITULO_ATUALIZACAO
+        MsgBox "AtualizaÁ„o cancelada.", vbInformation, MSG_TITULO_ATUALIZACAO
         Exit Sub
     End If
 
-    ' Mantemos ScreenUpdating = True para que a cor/texto da c√©lula
+    ' Mantemos ScreenUpdating = True para que a cor/texto da cÈlula
     ' sejam realmente redesenhados na tela durante o processo.
     Application.EnableEvents = False
 
@@ -78,21 +78,21 @@ Public Sub AtualizarTodasConsultasPowerQuery()
     iAtual = 0
     iComErro = 0
 
-    '-- ?? AMARELO ‚Äî marca in√≠cio do processamento -----------------------
+    '-- ?? AMARELO ó marca inÌcio do processamento -----------------------
     With rngStatus
         .Interior.Color = COR_AMARELO
-        .Value = "? Iniciando atualiza√ß√£o de " & iTotal & " consulta(s)..."
+        .Value = "? Iniciando atualizaÁ„o de " & iTotal & " consulta(s)..."
     End With
     DoEvents
 
-    '-- Percorre e atualiza cada conex√£o, uma por vez (modo s√≠ncrono) ----
+    '-- Percorre e atualiza cada conex„o, uma por vez (modo sÌncrono) ----
     For Each cn In wb.Connections
         iAtual = iAtual + 1
 
         rngStatus.Value = "? Atualizando " & iAtual & " de " & iTotal & _
                            ": " & cn.Name & "..."
         Application.StatusBar = rngStatus.Value
-        DoEvents ' for√ßa o redesenho da c√©lula/tela imediatamente
+        DoEvents ' forÁa o redesenho da cÈlula/tela imediatamente
 
         On Error Resume Next
         Err.Clear
@@ -111,7 +111,7 @@ Public Sub AtualizarTodasConsultasPowerQuery()
         On Error GoTo TratarErro
     Next cn
 
-    rngStatus.Value = "? Finalizando (aguardando c√°lculos pendentes)..."
+    rngStatus.Value = "? Finalizando (aguardando c·lculos pendentes)..."
     DoEvents
 
     On Error Resume Next
@@ -120,15 +120,15 @@ Public Sub AtualizarTodasConsultasPowerQuery()
 
     dtFim = Now
 
-    '-- ?? VERDE ‚Äî conclu√≠do (mesmo que com erros parciais registrados) --
+    '-- ?? VERDE ó concluÌdo (mesmo que com erros parciais registrados) --
     With rngStatus
         .Interior.Color = COR_VERDE
         If iComErro = 0 Then
-            .Value = "? Conclu√≠do em " & Format(dtFim, "dd/mm/yyyy hh:mm:ss") & _
-                      " ‚Äî " & iTotal & " consulta(s) atualizada(s) com sucesso."
+            .Value = "? ConcluÌdo em " & Format(dtFim, "dd/mm/yyyy hh:mm:ss") & _
+                      " ó " & iTotal & " consulta(s) atualizada(s) com sucesso."
         Else
-            .Value = "? Conclu√≠do em " & Format(dtFim, "dd/mm/yyyy hh:mm:ss") & _
-                      " ‚Äî " & (iTotal - iComErro) & " OK, " & iComErro & " com erro."
+            .Value = "? ConcluÌdo em " & Format(dtFim, "dd/mm/yyyy hh:mm:ss") & _
+                      " ó " & (iTotal - iComErro) & " OK, " & iComErro & " com erro."
         End If
     End With
 
@@ -136,18 +136,18 @@ Public Sub AtualizarTodasConsultasPowerQuery()
     Application.EnableEvents = True
 
     '-- Monta a mensagem final (MsgBox) -----------------------------------
-    sResumo = "Atualiza√ß√£o de consultas conclu√≠da." & vbNewLine & vbNewLine & _
-              "Total de conex√µes processadas: " & iTotal & vbNewLine & _
-              "Conclu√≠das com sucesso: " & (iTotal - iComErro) & vbNewLine & _
+    sResumo = "AtualizaÁ„o de consultas concluÌda." & vbNewLine & vbNewLine & _
+              "Total de conexıes processadas: " & iTotal & vbNewLine & _
+              "ConcluÌdas com sucesso: " & (iTotal - iComErro) & vbNewLine & _
               "Com erro: " & iComErro & vbNewLine & vbNewLine & _
-              "In√≠cio: " & Format(dtInicio, "dd/mm/yyyy hh:mm:ss") & vbNewLine & _
-              "T√©rmino: " & Format(dtFim, "dd/mm/yyyy hh:mm:ss") & vbNewLine & _
-              "Dura√ß√£o: " & Format(dtFim - dtInicio, "hh:mm:ss")
+              "InÌcio: " & Format(dtInicio, "dd/mm/yyyy hh:mm:ss") & vbNewLine & _
+              "TÈrmino: " & Format(dtFim, "dd/mm/yyyy hh:mm:ss") & vbNewLine & _
+              "DuraÁ„o: " & Format(dtFim - dtInicio, "hh:mm:ss")
 
     If sErros <> "" Then
         sResumo = sResumo & vbNewLine & vbNewLine & _
                   "? Detalhes dos erros (dica: 'Query does not exist' indica " & _
-                  "uma conex√£o √≥rf√£, sem consulta Power Query correspondente):" & _
+                  "uma conex„o Ûrf„, sem consulta Power Query correspondente):" & _
                   vbNewLine & sErros
         MsgBox sResumo, vbExclamation, MSG_TITULO_ATUALIZACAO
     Else
@@ -160,7 +160,7 @@ TratarErro:
     Application.StatusBar = False
     Application.EnableEvents = True
 
-    '-- ?? VERMELHO ‚Äî erro fatal, processo interrompido antes do fim -----
+    '-- ?? VERMELHO ó erro fatal, processo interrompido antes do fim -----
     On Error Resume Next
     With rngStatus
         .Interior.Color = COR_VERMELHO
@@ -169,15 +169,15 @@ TratarErro:
     End With
     On Error GoTo 0
 
-    MsgBox "Erro inesperado durante a atualiza√ß√£o das consultas:" & vbNewLine & _
+    MsgBox "Erro inesperado durante a atualizaÁ„o das consultas:" & vbNewLine & _
            Err.Number & " - " & Err.Description, vbCritical, MSG_TITULO_ATUALIZACAO
 End Sub
 
 
 '-----------------------------------------------------------------------
-' Retorna a Worksheet informada; se n√£o existir, CRIA uma nova aba com
-' esse nome (para garantir que sempre haja um local v√°lido para o
-' status, mesmo que a aba "Menu" ainda n√£o exista no arquivo).
+' Retorna a Worksheet informada; se n„o existir, CRIA uma nova aba com
+' esse nome (para garantir que sempre haja um local v·lido para o
+' status, mesmo que a aba "Menu" ainda n„o exista no arquivo).
 '-----------------------------------------------------------------------
 Private Function ObterPlanilhaStatus(wb As Workbook, nomeAba As String) As Worksheet
     Dim ws As Worksheet

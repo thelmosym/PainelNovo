@@ -1,17 +1,29 @@
 let
-    fnCalcularDataSLA = (dataInicial as date, horaInicial as time, tempoResposta as duration) as datetime =>
+    fnCalcularDataSLA = (dataInicial as date, horaInicial as time, tempoResposta as duration, optional municipio as text, optional uf as text, optional tbFeriados as table) as datetime =>
         let
             HoraEntrada = #time(8, 0, 0),
             HoraSaida = #time(17, 0, 0),
             HoraIniAlmoco = #time(12, 0, 0),
             HoraFimAlmoco = #time(13, 0, 0),
-
             TemExpediente = (data as date) as logical =>
                 let
-                    dow = Date.DayOfWeek(data, Day.Monday)
+                    dow = Date.DayOfWeek(data, Day.Monday),
+                    ehDiaUtil = dow <= 4,
+                    ehFeriado = if tbFeriados = null then false else
+                        let
+                            munStr = if municipio = null then "" else Text.Upper(municipio),
+                            ufStr = if uf = null then "" else Text.Upper(uf),
+                            feriadosData = Table.SelectRows(tbFeriados, each [Data] = data),
+                            matchFeriado = Table.RowCount(
+                                Table.SelectRows(feriadosData, each
+                                    ([UF] = "Todos" or [UF] = null or Text.Upper([UF]) = ufStr) and
+                                    ([MunicÃ­pio] = "Todos" or [MunicÃ­pio] = null or Text.Upper([MunicÃ­pio]) = munStr)
+                                )
+                            ) > 0
+                        in
+                            matchFeriado
                 in
-                    dow <= 4,
-
+                    ehDiaUtil and not ehFeriado,
             ProcessarDia = (estado as record) as record =>
                 let
                     data0 = estado[Data],
@@ -44,19 +56,16 @@ let
                                 ResultadoDia
                 in
                     Resultado,
-
             EstadoInicial = [ Data = dataInicial, Hora = horaInicial, Restante = tempoResposta ],
-
             Historico = List.Generate(
                 () => EstadoInicial,
                 (e) => e[Restante] > #duration(0,0,0,0),
                 (e) => ProcessarDia(e)
             ),
-
             UltimoPendente = if List.Count(Historico) = 0 then EstadoInicial else List.Last(Historico),
             EstadoFinal = if tempoResposta <= #duration(0,0,0,0) then EstadoInicial else ProcessarDia(UltimoPendente)
         in
-            // ? CORREÇÃO: time - time = duration (conversão válida)
+            // ? CORRECAO: time - time = duration (conversao valida)
             DateTime.From(EstadoFinal[Data]) + (EstadoFinal[Hora] - #time(0,0,0))
 in
     fnCalcularDataSLA

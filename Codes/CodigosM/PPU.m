@@ -1,6 +1,6 @@
 let
     Fonte = Excel.Workbook(File.Contents(localTabelaB), null, true),
     PPU_Table = Fonte{[Item="PPU",Kind="Table"]}[Data],
-    #"Tipo Alterado" = Table.TransformColumnTypes(PPU_Table,{{"Contrato", type text}, {"Item PPU", type text}, {"Linha de ServiÁo PPU", type text}, {"DescriÁ„o da Linha de ServiÁo", type text}, {"Unidade da Linha de ServiÁo", type text}, {"P. Unit·rio (R$)", type number}})
+    #"Tipo Alterado" = Table.TransformColumnTypes(PPU_Table,{{"Contrato", type text}, {"Item PPU", type text}, {"Linha de Servi√ßo PPU", type text}, {"Descri√ß√£o da Linha de Servi√ßo", type text}, {"Unidade da Linha de Servi√ßo", type text}, {"P. Unit√°rio (R$)", type number}})
 in
     #"Tipo Alterado"

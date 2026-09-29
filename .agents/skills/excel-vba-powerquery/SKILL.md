@@ -5,6 +5,7 @@ description: >-
   e engenharia de planilhas (.xlsm / .xlsx). Use sempre que o usuário solicitar desenvolvimento,
   correção, refatoração ou otimização de rotinas VBA, criação/ajuste de consultas e funções Power Query M,
   leitura e inspeção estrutural de pastas de trabalho e orquestração de fluxos de dados no Excel.
+  Inclui a garantia estrita de codificação Windows-1252 (ANSI) e quebras CRLF em códigos VBA para que textos e acentos em português apareçam corretamente no editor do VBA (VBE).
 ---
 
 # Skill: Automação Avançada de Excel (VBA & Power Query M)
@@ -33,6 +34,12 @@ Esta skill orienta o desenvolvimento, depuração e manutenção de soluções c
 Consulte o guia detalhado em [vba_best_practices.md](./references/vba_best_practices.md).
 
 ### Regras Mandatórias:
+* **Codificação Estrita em Windows-1252 (CP1252 / ANSI) & Quebras CRLF:**
+  O editor do VBA (*Visual Basic Editor - VBE*) é uma aplicação ANSI legada e **NÃO** oferece suporte nativo a UTF-8. Arquivos `.bas`, `.cls` e `.frm` salvos em UTF-8 corrompem caracteres acentuados em português (`ç`, `ã`, `é`, `ó`, etc.), gerando *mojibake* ao serem importados no Excel. Todos os códigos VBA devem ser estritamente salvos na codificação **Windows-1252 (CP1252)** com terminações de linha **CRLF (`\r\n`)**.
+* **Proibição de Emojis Unicode de 4 bytes:**
+  Emojis como `🟡`, `🟢`, `✅`, `❌` não existem na tabela de caracteres CP1252 e causam corrupção (`ðŸŸ¡`) ou erro no VBE. Devem ser sempre substituídos por tags textuais claras em português: `[AMARELO]`, `[VERDE]`, `[OK]`, `[AVISO]`, `[ERRO]`.
+* **Identificador de Módulo Obrigatório (`Attribute VB_Name`):**
+  A linha 1 de todo arquivo `.bas` exportado deve conter `Attribute VB_Name = "<NomeDoModulo>"` para que o Excel preserve o nome do módulo ao ser importado, em vez de atribuir genericamente `Módulo1`.
 * **Sempre declarar variáveis explicitamente:** Todo módulo deve iniciar com `Option Explicit`.
 * **Nunca usar `.Select` ou `.Activate`:** Trabalhe diretamente com objetos qualificados (`ws.Range("A1")`, `tbl.DataBodyRange`).
 * **Padrão de Alta Performance para Rotinas:**
@@ -105,5 +112,6 @@ Consulte o guia de funções e sintaxe em [power_query_m_guide.md](./references/
 
 Ao editar ou propor alterações no repositório:
 * **Códigos M:** Manter arquivos `.m` sincronizados na pasta [Codes/CodigosM/](../../Codes/CodigosM/).
-* **Códigos VBA:** Manter módulos exportados (`.bas`, `.vba`, `.cls`) sincronizados na pasta [Codes/VBA/](../../Codes/VBA/).
+* **Códigos VBA:** Manter módulos exportados (`.bas`, `.vba`, `.cls`) sincronizados na pasta [Codes/VBA/](../../Codes/VBA/), obrigatoriamente codificados em **Windows-1252 (ANSI)** com quebras **CRLF**.
+* **Correção e Sanitização de Encoding:** Utilize o utilitário [scripts/fix_vba_encoding.py](./scripts/fix_vba_encoding.py) para auditar e converter automaticamente arquivos VBA para CP1252/CRLF, eliminando mojibake e protegendo acentuações em português.
 * **Inspeção de Planilhas:** Utilize o script utilitário [scripts/inspect_workbook.py](./scripts/inspect_workbook.py) para auditar abas, tabelas e objetos de pastas de trabalho `.xlsm`/`.xlsx` sem precisar de dependências externas.

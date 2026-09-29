@@ -1,9 +1,9 @@
 let
     Fonte = Excel.Workbook(File.Contents(localTabelaB), null, true),
     Grupo_Table = Fonte{[Item="Grupo",Kind="Table"]}[Data],
-    #"Tipo Alterado" = Table.TransformColumnTypes(Grupo_Table,{{"MunicÌpio", type text}, {"UF", type text}, {"RMT", type text}, {"Regi„o", type text}, {"Grupo", type text}, {"Contrato", type text}}),
-    #"Colunas Reordenadas" = Table.ReorderColumns(#"Tipo Alterado",{"Contrato", "MunicÌpio", "UF", "RMT", "Regi„o", "Grupo"}),
-    #"PersonalizaÁ„o Adicionada" = Table.AddColumn(#"Colunas Reordenadas", "codGrupo", each [MunicÌpio]&"\"&[UF]),
-    #"Colunas Reordenadas1" = Table.ReorderColumns(#"PersonalizaÁ„o Adicionada",{"codGrupo", "Contrato", "MunicÌpio", "UF", "RMT", "Regi„o", "Grupo"})
+    #"Tipo Alterado" = Table.TransformColumnTypes(Grupo_Table,{{"Munic√≠pio", type text}, {"UF", type text}, {"RMT", type text}, {"Regi√£o", type text}, {"Grupo", type text}, {"Contrato", type text}}),
+    #"Colunas Reordenadas" = Table.ReorderColumns(#"Tipo Alterado",{"Contrato", "Munic√≠pio", "UF", "RMT", "Regi√£o", "Grupo"}),
+    #"Personaliza√ß√£o Adicionada" = Table.AddColumn(#"Colunas Reordenadas", "codGrupo", each [Munic√≠pio]&"\"&[UF]),
+    #"Colunas Reordenadas1" = Table.ReorderColumns(#"Personaliza√ß√£o Adicionada",{"codGrupo", "Contrato", "Munic√≠pio", "UF", "RMT", "Regi√£o", "Grupo"})
 in
     #"Colunas Reordenadas1"

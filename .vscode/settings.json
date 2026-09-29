@@ -1,5 +1,15 @@
 {
     "powerquery.client.additionalSymbolsDirectories": [
         "d:/PainelNovo/.vscode/excel-pq-symbols"
-    ]
+    ],
+    "gemini-cli.debug.logging.enabled": true,
+    "[vba]": {
+        "files.encoding": "windows1252"
+    },
+    "files.associations": {
+        "*.cls": "vba",
+        "*.bas": "vba",
+        "*.frm": "vba",
+        "*.vba": "vba"
+    }
 }

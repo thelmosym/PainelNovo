@@ -36,10 +36,10 @@ Sub Inicial_Importar_e_calcular_dados_Atendimentos()
     ' Passo 3: Se o valor for encontrado, obter o valor da coluna AQ na mesma linha
     If linhaEncontrada > 0 Then
         valorPeriodo = wsTabelas.Cells(linhaEncontrada, "AQ").Value
-        ' Passo 4: Inserir o valor na c�lula J7 da guia "MC"
+        ' Passo 4: Inserir o valor na c?lula J7 da guia "MC"
         wsMC.Range("J7").Value = valorPeriodo
     Else
-        MsgBox "Per�odo n�o encontrado na guia Tabelas.", vbExclamation
+        MsgBox "Per?odo n?o encontrado na guia Tabelas.", vbExclamation
     End If
 
 
@@ -53,21 +53,21 @@ Sub Inicial_Importar_e_calcular_dados_Atendimentos()
     Dim wbFonte As Workbook
     Dim rngFonte As Range
     
-    ' Definir a planilha atual (onde os dados ser�o atualizados)
+    ' Definir a planilha atual (onde os dados ser?o atualizados)
     Set wsDadosAtual = ThisWorkbook.Sheets("Dados")
     
     ThisWorkbook.Sheets("Dados").Columns("AF").Hidden = False
     
-    ' Apagar dados de B3 at� a �ltima linha preenchida
+    ' Apagar dados de B3 at? a ?ltima linha preenchida
     ultimaLinhaAtual = wsDadosAtual.Cells(wsDadosAtual.Rows.Count, "B").End(xlUp).Row
     If ultimaLinhaAtual >= 3 Then
         wsDadosAtual.Range("B3:AF" & ultimaLinhaAtual).ClearContents
     End If
     
-    ' Abrir caixa de di�logo para selecionar o arquivo Excel
+    ' Abrir caixa de di?logo para selecionar o arquivo Excel
     caminhoArquivo = Application.GetOpenFilename("Arquivos Excel (*.xls; *.xlsx), *.xls; *.xlsx", , "Selecionar Arquivo Excel")
     
-    ' Verificar se o usu�rio selecionou um arquivo
+    ' Verificar se o usu?rio selecionou um arquivo
     If caminhoArquivo <> "False" Then
         ' Abrir o arquivo Excel selecionado
         Set wbFonte = Workbooks.Open(caminhoArquivo)
@@ -75,19 +75,19 @@ Sub Inicial_Importar_e_calcular_dados_Atendimentos()
         ' Definir a planilha "Dados" do arquivo selecionado
         Set wsDadosFonte = wbFonte.Sheets("Dados")
         
-        ' Encontrar a �ltima linha com dados na coluna B da planilha de origem
+        ' Encontrar a ?ltima linha com dados na coluna B da planilha de origem
         ultimaLinhaFonte = wsDadosFonte.Cells(wsDadosFonte.Rows.Count, "B").End(xlUp).Row
         
-        ' Definir o intervalo de dados a ser copiado (da c�lula B3 at� a �ltima linha na coluna X)
+        ' Definir o intervalo de dados a ser copiado (da c?lula B3 at? a ?ltima linha na coluna X)
         Set rngFonte = wsDadosFonte.Range("B3:X" & ultimaLinhaFonte)
         
         ' Copiar os dados do arquivo de origem
         rngFonte.Copy
         
-        ' Colar os dados na planilha atual a partir da c�lula B3
+        ' Colar os dados na planilha atual a partir da c?lula B3
         wsDadosAtual.Range("B3").PasteSpecial Paste:=xlPasteValues
         
-        ' Limpar a �rea de transfer�ncia para evitar a mensagem de "muita informa��o"
+        ' Limpar a ?rea de transfer?ncia para evitar a mensagem de "muita informa??o"
         Application.CutCopyMode = False
         
         ' Fechar o arquivo fonte
@@ -120,7 +120,7 @@ Sub Organizar_dados()
 
     
     
-    ' define a �ltima linha
+    ' define a ?ltima linha
     ultimaLinha = Cells(Rows.Count, "B").End(xlUp).Row
     
     ' seleciona e organiza a planilha pelas colunas K, S, V e B
@@ -163,7 +163,7 @@ Sub Organizar_dados()
     'Selection.AutoFilter
     
     
-     ' Apaga os dados das colunas referente aos dados da medi��o
+     ' Apaga os dados das colunas referente aos dados da medi??o
     Sheets("Dados").Select
     Range("Y3:AF10000").Select
     Selection.ClearContents
@@ -196,16 +196,16 @@ Sub AtualizarLocalidades()
     Set wsTabelas = ThisWorkbook.Sheets("Tabelas")
     
     
-    ' Obter a �ltima linha com dados nas planilhas
+    ' Obter a ?ltima linha com dados nas planilhas
     ultimaLinhaDados = wsDados.Cells(wsDados.Rows.Count, "S").End(xlUp).Row
     ultimaLinhaTabelas = wsTabelas.Cells(wsTabelas.Rows.Count, "M").End(xlUp).Row
     
     ' Loop pelas linhas da planilha "Dados"
-    For i = 2 To ultimaLinhaDados ' Pressupondo que a linha 1 cont�m cabe�alhos
+    For i = 2 To ultimaLinhaDados ' Pressupondo que a linha 1 cont?m cabe?alhos
         ' Obter a localidade de origem da coluna "S"
         localidadeOrigem = wsDados.Cells(i, "S").Value
         
-        ' Verificar se a localidade de origem n�o est� vazia
+        ' Verificar se a localidade de origem n?o est? vazia
         If Trim(localidadeOrigem) <> "" Then
             ' Procurar a localidade na planilha "Tabelas", coluna "M"
             valorEncontrado = Application.VLookup(localidadeOrigem, wsTabelas.Range("M2:N" & ultimaLinhaTabelas), 2, False)
@@ -214,7 +214,7 @@ Sub AtualizarLocalidades()
             If Not IsError(valorEncontrado) Then
                 wsDados.Cells(i, "AC").Value = valorEncontrado
             Else
-                ' Deixar a c�lula em branco se n�o encontrar
+                ' Deixar a c?lula em branco se n?o encontrar
                 wsDados.Cells(i, "AC").Value = ""
             End If
         End If
@@ -224,8 +224,8 @@ Sub AtualizarLocalidades()
     ActiveCell.FormulaR1C1 = "Centro"
     Range("AC3").Select
     
-    ' Mensagem de conclus�o
-    'MsgBox "Atualiza��o de localidades conclu�da!", vbInformation
+    ' Mensagem de conclus?o
+    'MsgBox "Atualiza??o de localidades conclu?da!", vbInformation
         ActiveWorkbook.Save
         
         
@@ -250,7 +250,7 @@ Sub ConcatenarEInserirResultado()
     
 
     
-    ' Encontrar a �ltima linha da coluna "S" (Localidade - Origem)
+    ' Encontrar a ?ltima linha da coluna "S" (Localidade - Origem)
     ultimaLinha = wsDados.Cells(wsDados.Rows.Count, "S").End(xlUp).Row
     
     ' Loop pelas linhas da guia Dados para concatenar as localidades
@@ -266,7 +266,7 @@ Sub ConcatenarEInserirResultado()
         wsDados.Cells(i, "AF").Value = chaveConcatenada
     Next i
     
-    'MsgBox "Concata��o conclu�da e inserida na coluna AF!", vbInformation
+    'MsgBox "Concata??o conclu?da e inserida na coluna AF!", vbInformation
     
         ActiveWorkbook.Save
         
@@ -296,36 +296,36 @@ Sub InserirLinhaServico()
     Set wsDados = ThisWorkbook.Sheets("Dados")
     Set wsTabelas = ThisWorkbook.Sheets("Tabelas")
     
-    ' Encontrar a �ltima linha da coluna B (Descri��o da Atividade) na planilha "Dados"
+    ' Encontrar a ?ltima linha da coluna B (Descri??o da Atividade) na planilha "Dados"
     ultimaLinhaDados = wsDados.Cells(wsDados.Rows.Count, "B").End(xlUp).Row
     
-    ' Encontrar a �ltima linha da coluna H (Descri��o da Atividade) na planilha "Tabelas"
+    ' Encontrar a ?ltima linha da coluna H (Descri??o da Atividade) na planilha "Tabelas"
     ultimaLinhaTabelas = wsTabelas.Cells(wsTabelas.Rows.Count, "H").End(xlUp).Row
     
     ' Loop pelas linhas da planilha "Dados"
     For i = 2 To ultimaLinhaDados
         descricaoAtividade = wsDados.Cells(i, "B").Value
         
-        ' Buscar a descri��o da atividade na coluna H da planilha "Tabelas"
+        ' Buscar a descri??o da atividade na coluna H da planilha "Tabelas"
         Set celulaDescricao = wsTabelas.Range("H2:H" & ultimaLinhaTabelas).Find(descricaoAtividade, LookIn:=xlValues, LookAt:=xlWhole)
         
-        ' Se a descri��o for encontrada na planilha "Tabelas"
+        ' Se a descri??o for encontrada na planilha "Tabelas"
         If Not celulaDescricao Is Nothing Then
-            ' Pegar a informa��o da linha de servi�o da coluna K na planilha "Tabelas"
+            ' Pegar a informa??o da linha de servi?o da coluna K na planilha "Tabelas"
             linhaServico = wsTabelas.Cells(celulaDescricao.Row, "K").Value
             
-            ' Inserir a informa��o da linha de servi�o na coluna AE da planilha "Dados"
+            ' Inserir a informa??o da linha de servi?o na coluna AE da planilha "Dados"
             wsDados.Cells(i, "AE").Value = linhaServico
         Else
-            ' Caso a descri��o n�o seja encontrada, deixar a c�lula em branco ou inserir mensagem
+            ' Caso a descri??o n?o seja encontrada, deixar a c?lula em branco ou inserir mensagem
             wsDados.Cells(i, "AE").ClearContents
         End If
     Next i
     
     Range("AE2").Select
-    ActiveCell.FormulaR1C1 = "Linha de servi�o PPU 1"
+    ActiveCell.FormulaR1C1 = "Linha de servi?o PPU 1"
     
-    'MsgBox "Linha de Servi�o inserida com sucesso!", vbInformation
+    'MsgBox "Linha de Servi?o inserida com sucesso!", vbInformation
     
         ActiveWorkbook.Save
         
@@ -360,14 +360,14 @@ Sub CalcularQuilometragemAdicional()
     Set wsDados = ThisWorkbook.Sheets("Dados")
     Set wsDistancias = ThisWorkbook.Sheets("Tabelas")
     
-    ' Definir as �ltimas linhas de cada guia
+    ' Definir as ?ltimas linhas de cada guia
     ultimaLinhaDados = wsDados.Cells(wsDados.Rows.Count, "S").End(xlUp).Row
     ultimaLinhaDistancias = wsDistancias.Cells(wsDistancias.Rows.Count, "C").End(xlUp).Row
     
-    ' Definir o range de dist�ncias
+    ' Definir o range de dist?ncias
     Set rngDistancias = wsDistancias.Range("C2:C" & ultimaLinhaDistancias)
     
-    ' Criar uma cole��o para armazenar as chaves processadas
+    ' Criar uma cole??o para armazenar as chaves processadas
     Set chaveConcatenadaProcessada = New Collection
     
     ' Loop pelas linhas da guia Dados
@@ -376,38 +376,38 @@ Sub CalcularQuilometragemAdicional()
         localOrigem = wsDados.Cells(i, "S").Value
         localDestino = wsDados.Cells(i, "V").Value
         
-        ' Verificar se o valor da data de fechamento � uma data v�lida
+        ' Verificar se o valor da data de fechamento ? uma data v?lida
         If IsDate(wsDados.Cells(i, "K").Value) Then
             dataFechamentoLinha = CDate(wsDados.Cells(i, "K").Value) ' Convertendo para data e hora
-            dataSomente = Int(dataFechamentoLinha) ' Apenas a data, ignorando o hor�rio
+            dataSomente = Int(dataFechamentoLinha) ' Apenas a data, ignorando o hor?rio
         Else
-            dataSomente = 0 ' Atribuir um valor padr�o caso n�o seja uma data
+            dataSomente = 0 ' Atribuir um valor padr?o caso n?o seja uma data
         End If
         
-        ' Verificar o tipo de linha de servi�o na coluna AE
+        ' Verificar o tipo de linha de servi?o na coluna AE
         linhaServico = wsDados.Cells(i, "AE").Value
         
-        ' Verificar se a linha de servi�o � FRE-NRM ou FRE-EXP
+        ' Verificar se a linha de servi?o ? FRE-NRM ou FRE-EXP
         If linhaServico = "FRE-NRM" Or linhaServico = "FRE-EXP" Then
             ' Obter a chave concatenada da coluna AF (Localidade Origem X Destino)
             chaveBusca = wsDados.Cells(i, "AF").Value
             
-            ' Verificar se essa chave j� foi processada para a mesma data e tipo de linha de servi�o
+            ' Verificar se essa chave j? foi processada para a mesma data e tipo de linha de servi?o
             chaveProcessada = chaveBusca & "_" & dataSomente & "_" & linhaServico
             On Error Resume Next
             chaveConcatenadaProcessada.Add chaveProcessada, chaveProcessada
             If Err.Number = 0 Then
-                ' Se a chave n�o foi processada antes, buscar a dist�ncia ajustada
+                ' Se a chave n?o foi processada antes, buscar a dist?ncia ajustada
                 Set celulaDistancia = rngDistancias.Find(What:=chaveBusca, LookIn:=xlValues, LookAt:=xlWhole)
                 
-                ' Se encontrado, obter a dist�ncia ajustada
+                ' Se encontrado, obter a dist?ncia ajustada
                 If Not celulaDistancia Is Nothing Then
-                    distanciaAjustada = wsDistancias.Cells(celulaDistancia.Row, "E").Value ' Coluna de Dist�ncia Ajustada
+                    distanciaAjustada = wsDistancias.Cells(celulaDistancia.Row, "E").Value ' Coluna de Dist?ncia Ajustada
                     
-                    ' Verificar se a dist�ncia ajustada � maior que 0 e registrar
+                    ' Verificar se a dist?ncia ajustada ? maior que 0 e registrar
                     If distanciaAjustada > 0 Then
                         wsDados.Cells(i, "Y").Value = distanciaAjustada
-                        ' Formatar o valor na coluna Y (se for inteiro, sem casas decimais, se n�o, com 1 casa decimal)
+                        ' Formatar o valor na coluna Y (se for inteiro, sem casas decimais, se n?o, com 1 casa decimal)
                         If distanciaAjustada = Int(distanciaAjustada) Then
                             wsDados.Cells(i, "Y").Value = Int(distanciaAjustada)
                         Else
@@ -415,26 +415,26 @@ Sub CalcularQuilometragemAdicional()
                         End If
                         Debug.Print "Linha: " & i & " - Quilometragem registrada: " & distanciaAjustada
                     Else
-                        wsDados.Cells(i, "Y").ClearContents ' Deixar em branco se n�o for aplic�vel
-                        Debug.Print "Linha: " & i & " - Quilometragem n�o aplic�vel."
+                        wsDados.Cells(i, "Y").ClearContents ' Deixar em branco se n?o for aplic?vel
+                        Debug.Print "Linha: " & i & " - Quilometragem n?o aplic?vel."
                     End If
                 Else
-                    ' Se n�o encontrado, deixar a coluna Y em branco
+                    ' Se n?o encontrado, deixar a coluna Y em branco
                     wsDados.Cells(i, "Y").ClearContents
-                    Debug.Print "Linha: " & i & " - Chave n�o encontrada na guia Tabelas."
+                    Debug.Print "Linha: " & i & " - Chave n?o encontrada na guia Tabelas."
                 End If
             Else
-                ' Se a chave j� foi processada para a mesma data e tipo de linha de servi�o, deixar a coluna Y em branco
+                ' Se a chave j? foi processada para a mesma data e tipo de linha de servi?o, deixar a coluna Y em branco
                 wsDados.Cells(i, "Y").ClearContents
-                Debug.Print "Linha: " & i & " - Chave j� processada para " & linhaServico & "."
+                Debug.Print "Linha: " & i & " - Chave j? processada para " & linhaServico & "."
             End If
             On Error GoTo 0
         Else
-            Debug.Print "Linha: " & i & " - Linha de servi�o n�o corresponde."
+            Debug.Print "Linha: " & i & " - Linha de servi?o n?o corresponde."
         End If
     Next i
     
-    'MsgBox "C�lculo de quilometragem adicional conclu�do! Verifique os logs no depurador (CTRL+G).", vbInformation
+    'MsgBox "C?lculo de quilometragem adicional conclu?do! Verifique os logs no depurador (CTRL+G).", vbInformation
 
     ActiveWorkbook.Save
     
@@ -458,32 +458,32 @@ Sub CalcularFrete()
     ' Inicializar a planilha
     Set wsDados = ThisWorkbook.Sheets("Dados")
 
-    ' Determinar o n�mero de linhas
+    ' Determinar o n?mero de linhas
     ultimaLinhaDados = wsDados.Cells(wsDados.Rows.Count, "K").End(xlUp).Row
 
-    ' Definir �ndices de colunas
+    ' Definir ?ndices de colunas
     colData = 11 ' Coluna K (Data de Fechamento)
     colTipoFrete = 31 ' Coluna AE (Tipo de Frete)
     colLocalConcatenado = 32 ' Coluna AF (Local Concatenado)
     colQuantidade = 13 ' Coluna M (Quantidade)
     colResultado = 27 ' Coluna AA (Resultado de Frete)
 
-    ' Inicializar dicion�rio para armazenar resultados tempor�rios
+    ' Inicializar dicion?rio para armazenar resultados tempor?rios
     Set dictFretes = CreateObject("Scripting.Dictionary")
 
     ' Percorrer cada linha da aba Dados
     For i = 2 To ultimaLinhaDados
-        ' Garantir que a c�lula cont�m uma data v�lida
+        ' Garantir que a c?lula cont?m uma data v?lida
         If IsDate(wsDados.Cells(i, colData).Value) Then
-            dataAtual = Int(CDate(wsDados.Cells(i, colData).Value)) ' Converter para data, ignorando o hor�rio
+            dataAtual = Int(CDate(wsDados.Cells(i, colData).Value)) ' Converter para data, ignorando o hor?rio
         Else
-            dataAtual = 0 ' Se n�o for uma data v�lida, atribui 0
+            dataAtual = 0 ' Se n?o for uma data v?lida, atribui 0
         End If
         
         tipoFrete = wsDados.Cells(i, colTipoFrete).Value
         localConcatenado = wsDados.Cells(i, colLocalConcatenado).Value
 
-        ' Validar se a data � v�lida
+        ' Validar se a data ? v?lida
         If dataAtual <> 0 And (tipoFrete = "FRE-NRM" Or tipoFrete = "FRE-EXP") Then
             ' Inicializar soma de quantidades
             somaQuantidade = 0
@@ -491,7 +491,7 @@ Sub CalcularFrete()
             ' Verificar e somar as quantidades para o mesmo grupo de data, tipo de frete e local concatenado
             If Not dictFretes.exists(dataAtual & "|" & tipoFrete & "|" & localConcatenado) Then
                 For j = 2 To ultimaLinhaDados
-                    ' Verificar se a c�lula cont�m uma data v�lida
+                    ' Verificar se a c?lula cont?m uma data v?lida
                     If IsDate(wsDados.Cells(j, colData).Value) Then
                         If Int(CDate(wsDados.Cells(j, colData).Value)) = dataAtual And _
                            wsDados.Cells(j, colTipoFrete).Value = tipoFrete And _
@@ -503,29 +503,29 @@ Sub CalcularFrete()
 
                 ' Calcular o valor do frete
                 If somaQuantidade <= 10 Then
-                    valorFrete = 1 ' Se a quantidade for menor ou igual a 10, o valor do frete � 1
+                    valorFrete = 1 ' Se a quantidade for menor ou igual a 10, o valor do frete ? 1
                 Else
-                    valorFrete = somaQuantidade / 10 ' Caso contr�rio, divide por 10
+                    valorFrete = somaQuantidade / 10 ' Caso contr?rio, divide por 10
                 End If
 
-                ' Registrar o valor na primeira ocorr�ncia e formatar
+                ' Registrar o valor na primeira ocorr?ncia e formatar
                 dictFretes.Add dataAtual & "|" & tipoFrete & "|" & localConcatenado, valorFrete
 
                 ' Se o valor for 0, deixar em branco
                 If valorFrete = 0 Then
-                    wsDados.Cells(i, colResultado).ClearContents ' Deixa a c�lula em branco
+                    wsDados.Cells(i, colResultado).ClearContents ' Deixa a c?lula em branco
                 ElseIf valorFrete = Int(valorFrete) Then
-                    ' Se for n�mero inteiro, exibir sem casas decimais
+                    ' Se for n?mero inteiro, exibir sem casas decimais
                     wsDados.Cells(i, colResultado).Value = Int(valorFrete)
                 Else
-                    ' Se n�o for inteiro, exibir com 1 casa decimal
+                    ' Se n?o for inteiro, exibir com 1 casa decimal
                     wsDados.Cells(i, colResultado).Value = Round(valorFrete, 1)
                 End If
             End If
         End If
     Next i
 
-    'MsgBox "C�lculo de frete conclu�do!", vbInformation
+    'MsgBox "C?lculo de frete conclu?do!", vbInformation
         ActiveWorkbook.Save
         
   
@@ -546,10 +546,10 @@ Sub CalcularPagamentoItens()
     ' Inicializar a planilha
     Set wsDados = ThisWorkbook.Sheets("Dados")
 
-    ' Determinar o n�mero de linhas
+    ' Determinar o n?mero de linhas
     ultimaLinhaDados = wsDados.Cells(wsDados.Rows.Count, "K").End(xlUp).Row
 
-    ' Definir �ndices de colunas
+    ' Definir ?ndices de colunas
     colTipoItem = 31 ' Coluna AE (Tipo de Item)
     colQuantidade = 13 ' Coluna M (Quantidade)
     colPagamento = 27 ' Coluna AA (Pagamento)
@@ -565,13 +565,13 @@ Sub CalcularPagamentoItens()
            tipoItem = "HIG-PER" Or tipoItem = "CONV-MID" Or tipoItem = "GRV-MID" Or _
            tipoItem = "COP-MID" Or tipoItem = "COP-VID" Or tipoItem = "IND-DOC" Then
 
-            ' A quantidade da coluna M ser� copiada para a coluna AA (Pagamento)
+            ' A quantidade da coluna M ser? copiada para a coluna AA (Pagamento)
             valorQuantidade = wsDados.Cells(i, colQuantidade).Value
 
             ' Registrar o valor na coluna AA
             wsDados.Cells(i, colPagamento).Value = valorQuantidade
 
-            ' Verificar se o valor � inteiro ou decimal
+            ' Verificar se o valor ? inteiro ou decimal
             If valorQuantidade = Int(valorQuantidade) Then
                 wsDados.Cells(i, colPagamento).NumberFormat = "0" ' Se for inteiro, sem casas decimais
             Else
@@ -580,7 +580,7 @@ Sub CalcularPagamentoItens()
         End If
     Next i
 
-    'MsgBox "C�lculo de pagamento de itens conclu�do!", vbInformation
+    'MsgBox "C?lculo de pagamento de itens conclu?do!", vbInformation
     
     
         ActiveWorkbook.Save
@@ -605,29 +605,29 @@ Sub CalcularOrgDoc()
     ' Inicializar a planilha
     Set wsDados = ThisWorkbook.Sheets("Dados")
 
-    ' Determinar o n�mero de linhas
+    ' Determinar o n?mero de linhas
     ultimaLinhaDados = wsDados.Cells(wsDados.Rows.Count, "K").End(xlUp).Row
 
-    ' Definir �ndices de colunas
+    ' Definir ?ndices de colunas
     colTipoItem = 31 ' Coluna AE (Tipo de Item)
-    colDescricao = 2 ' Coluna B (Descri��o)
+    colDescricao = 2 ' Coluna B (Descri??o)
     colQuantidade = 13 ' Coluna M (Quantidade)
-    colOrgDoc = 27 ' Coluna AA (Onde o resultado ser� registrado)
+    colOrgDoc = 27 ' Coluna AA (Onde o resultado ser? registrado)
 
     ' Percorrer cada linha da aba Dados
     For i = 2 To ultimaLinhaDados
         tipoItem = wsDados.Cells(i, colTipoItem).Value
         descricaoItem = wsDados.Cells(i, colDescricao).Value
 
-        ' Verificar se o tipo de item � "ORG-DOC"
+        ' Verificar se o tipo de item ? "ORG-DOC"
         If tipoItem = "ORG-DOC" Then
-            ' Verificar se a descri��o � "ORGANIZACAO DE DOCUMENTO SIMPLES"
+            ' Verificar se a descri??o ? "ORGANIZACAO DE DOCUMENTO SIMPLES"
             If descricaoItem = "ORGANIZACAO DE DOCUMENTO SIMPLES" Then
                 ' Multiplicar a quantidade por 0,5 e registrar na coluna AA
                 wsDados.Cells(i, colOrgDoc).Value = wsDados.Cells(i, colQuantidade).Value * 0.5
             End If
 
-            ' Verificar se a descri��o � "ORGANIZACAO DE DOCUMENTO ANALITICA"
+            ' Verificar se a descri??o ? "ORGANIZACAO DE DOCUMENTO ANALITICA"
             If descricaoItem = "ORGANIZACAO DE DOCUMENTO ANALITICA" Then
                 ' Registrar a quantidade diretamente na coluna AA
                 wsDados.Cells(i, colOrgDoc).Value = wsDados.Cells(i, colQuantidade).Value
@@ -635,7 +635,7 @@ Sub CalcularOrgDoc()
         End If
     Next i
 
-    'MsgBox "C�lculo de ORG-DOC conclu�do!", vbInformation
+    'MsgBox "C?lculo de ORG-DOC conclu?do!", vbInformation
     
         ActiveWorkbook.Save
         
@@ -663,12 +663,12 @@ Sub CalcularDigitalizacao()
     Set wsOrigem = ThisWorkbook.Sheets("dados") ' Nome da planilha de origem
     Set wsTabelas = ThisWorkbook.Sheets("Tabelas") ' Nome da planilha Tabelas
 
-    ' Encontrar a �ltima linha com dados na planilha de origem
+    ' Encontrar a ?ltima linha com dados na planilha de origem
     ultimaLinha = wsOrigem.Cells(wsOrigem.Rows.Count, "AE").End(xlUp).Row
 
     ' Loop pelas linhas da planilha de origem
-    For i = 2 To ultimaLinha ' Inicia na linha 2, considerando que a primeira linha tenha cabe�alhos
-        ' Verifica se a c�lula da coluna AE tem os valores desejados
+    For i = 2 To ultimaLinha ' Inicia na linha 2, considerando que a primeira linha tenha cabe?alhos
+        ' Verifica se a c?lula da coluna AE tem os valores desejados
         If wsOrigem.Cells(i, "AE").Value = "DIG-MI" Or wsOrigem.Cells(i, "AE").Value = "DIG-MF" Or wsOrigem.Cells(i, "AE").Value = "DIG-DOC" Then
             
             ' Pega o valor da coluna C da linha atual
@@ -682,7 +682,7 @@ Sub CalcularDigitalizacao()
                 ' Pega o valor correspondente na coluna V
                 valorV = chaveBusca.Offset(0, 2).Value
                 
-                ' Insere o valor na coluna Z da planilha de origem como n�mero com 2 casas decimais
+                ' Insere o valor na coluna Z da planilha de origem como n?mero com 2 casas decimais
                 wsOrigem.Cells(i, "Z").Value = valorV
                 wsOrigem.Cells(i, "Z").NumberFormat = "0.00"
                 
@@ -726,21 +726,21 @@ Sub AtualizarUnidade()
     Set wsDados = ThisWorkbook.Sheets("Dados")
     Set wsTabelas = ThisWorkbook.Sheets("Tabelas")
     
-    ' Obter a �ltima linha com dados nas planilhas
+    ' Obter a ?ltima linha com dados nas planilhas
     ultimaLinhaDados = wsDados.Cells(wsDados.Rows.Count, "B").End(xlUp).Row
     ultimaLinhaTabelas = wsTabelas.Cells(wsTabelas.Rows.Count, "H").End(xlUp).Row
     
     ' Loop pelas linhas da planilha "Dados"
-    For i = 2 To ultimaLinhaDados ' Pressupondo que a linha 1 cont�m cabe�alhos
+    For i = 2 To ultimaLinhaDados ' Pressupondo que a linha 1 cont?m cabe?alhos
         ' Obter os valores das colunas "B" e "C" da guia "Dados"
         valorB = wsDados.Cells(i, "B").Value
         valorC = wsDados.Cells(i, "C").Value
         encontrou = False
         
-        ' Verificar se as localidades n�o est�o vazias
+        ' Verificar se as localidades n?o est?o vazias
         If Trim(valorB) <> "" And Trim(valorC) <> "" Then
-            ' Buscar na guia "Tabelas" para as duas condi��es
-            For linhaEncontrada = 2 To ultimaLinhaTabelas ' Come�ar da linha 2, assumindo cabe�alhos
+            ' Buscar na guia "Tabelas" para as duas condi??es
+            For linhaEncontrada = 2 To ultimaLinhaTabelas ' Come?ar da linha 2, assumindo cabe?alhos
                 If wsTabelas.Cells(linhaEncontrada, "H").Value = valorB And wsTabelas.Cells(linhaEncontrada, "I").Value = valorC Then
                     ' Se encontrar, pegar o valor da coluna "J" e inserir na coluna "AB" da guia "Dados"
                     wsDados.Cells(i, "AB").Value = wsTabelas.Cells(linhaEncontrada, "J").Value
@@ -750,9 +750,9 @@ Sub AtualizarUnidade()
             Next linhaEncontrada
         End If
         
-        ' Se n�o encontrar, inserir a mensagem "N�o encontrado"
+        ' Se n?o encontrar, inserir a mensagem "N?o encontrado"
         If Not encontrou Then
-            wsDados.Cells(i, "AB").Value = "N�o encontrado"
+            wsDados.Cells(i, "AB").Value = "N?o encontrado"
         End If
     Next i
     
@@ -785,12 +785,12 @@ Sub Preencher_Codigo_Centro()
     Set wsDados = ThisWorkbook.Sheets("Dados")
     Set wsTabelas = ThisWorkbook.Sheets("Tabelas")
     
-    ' Obter a �ltima linha com dados nas planilhas
+    ' Obter a ?ltima linha com dados nas planilhas
     ultimaLinhaDados = wsDados.Cells(wsDados.Rows.Count, "AC").End(xlUp).Row
     ultimaLinhaTabelas = wsTabelas.Cells(wsTabelas.Rows.Count, "N").End(xlUp).Row
     
     ' Loop pelas linhas da planilha "Dados"
-    For i = 2 To ultimaLinhaDados ' Supondo que a linha 1 cont�m cabe�alhos
+    For i = 2 To ultimaLinhaDados ' Supondo que a linha 1 cont?m cabe?alhos
         ' Obter a localidade da coluna AC
         localidade = wsDados.Cells(i, "AC").Value
         encontrado = False
@@ -806,22 +806,22 @@ Sub Preencher_Codigo_Centro()
             End If
         Next celula
         
-        ' Se n�o encontrado, inserir a mensagem "N�o encontrado"
+        ' Se n?o encontrado, inserir a mensagem "N?o encontrado"
         If Not encontrado Then
-            wsDados.Cells(i, "AD").Value = "N�o encontrado"
+            wsDados.Cells(i, "AD").Value = "N?o encontrado"
         End If
         
-        ' Garantir que os valores na coluna AD estejam no formato de 4 d�gitos
+        ' Garantir que os valores na coluna AD estejam no formato de 4 d?gitos
         Set celula = wsDados.Cells(i, "AD")
         If IsNumeric(celula.Value) And Not IsEmpty(celula.Value) Then
-            ' Aplicar o formato de 4 d�gitos (zeros � esquerda)
+            ' Aplicar o formato de 4 d?gitos (zeros ? esquerda)
             Application.CutCopyMode = False
             celula.NumberFormat = "0000"
         End If
     Next i
     
         Range("AD2").Select
-    ActiveCell.FormulaR1C1 = "C�digo Centro"
+    ActiveCell.FormulaR1C1 = "C?digo Centro"
     
     'Formata Planilha
         Cells.Select
@@ -928,23 +928,23 @@ Sub CopiarDadosParaFretes()
 
     
     
-    ' Encontrar a �ltima linha preenchida na guia "Dados"
+    ' Encontrar a ?ltima linha preenchida na guia "Dados"
     ultimaLinhaDados = wsDados.Cells(wsDados.Rows.Count, "B").End(xlUp).Row
     
-    ' Encontrar a �ltima linha preenchida na guia "Fretes" (onde os dados ser�o colados)
+    ' Encontrar a ?ltima linha preenchida na guia "Fretes" (onde os dados ser?o colados)
     ultimaLinhaFretes = wsFretes.Cells(wsFretes.Rows.Count, "A").End(xlUp).Row
     
     ' Iniciar o loop para copiar os dados a partir da linha 3 da guia "Dados"
     For i = 3 To ultimaLinhaDados
-        ' Obter o valor da c�lula na coluna AE da guia "Dados"
-        valorAE = wsDados.Cells(i, 31).Value ' Coluna AE � a 31� coluna
-        ' Obter o valor da c�lula na coluna AA da guia "Dados"
-        valorAA = wsDados.Cells(i, 27).Value ' Coluna AA � a 27� coluna
+        ' Obter o valor da c?lula na coluna AE da guia "Dados"
+        valorAE = wsDados.Cells(i, 31).Value ' Coluna AE ? a 31? coluna
+        ' Obter o valor da c?lula na coluna AA da guia "Dados"
+        valorAA = wsDados.Cells(i, 27).Value ' Coluna AA ? a 27? coluna
         
-        ' Verificar se o valor da coluna AE � "FRE-NRM" ou "FRE-EXP"
+        ' Verificar se o valor da coluna AE ? "FRE-NRM" ou "FRE-EXP"
         ' E se o valor da coluna AA for diferente de zero ou vazio
         If (valorAE = "FRE-NRM" Or valorAE = "FRE-EXP") And valorAA <> 0 And Not IsEmpty(valorAA) Then
-            ' Incrementar a �ltima linha de "Fretes" para garantir que os dados sejam copiados sem lacunas
+            ' Incrementar a ?ltima linha de "Fretes" para garantir que os dados sejam copiados sem lacunas
             ultimaLinhaFretes = ultimaLinhaFretes + 1
             
             ' Copiar os dados conforme a tabela fornecida
@@ -968,7 +968,7 @@ Sub CopiarDadosParaFretes()
         End If
     Next i
 
-    ' Mensagem de conclus�o
+    ' Mensagem de conclus?o
     'MsgBox "Os dados foram copiados com sucesso para a guia 'Fretes'.", vbInformation
     
     ActiveWorkbook.Save
@@ -988,19 +988,19 @@ Sub AtualizarValores()
     Dim i As Long
     
     ' Definir a planilha onde os dados precisam ser ajustados
-    Set ws = ThisWorkbook.Sheets("Fretes") ' Altere para o nome da sua planilha, se necess�rio
+    Set ws = ThisWorkbook.Sheets("Fretes") ' Altere para o nome da sua planilha, se necess?rio
     
-    ' Encontrar a �ltima linha preenchida na planilha
+    ' Encontrar a ?ltima linha preenchida na planilha
     ultimaLinha = ws.Cells(ws.Rows.Count, "M").End(xlUp).Row
     
-    ' Loop para percorrer as linhas a partir da linha 2 at� a �ltima linha preenchida
+    ' Loop para percorrer as linhas a partir da linha 2 at? a ?ltima linha preenchida
     For i = ultimaLinha To 2 Step -1 ' Vamos percorrer de baixo para cima para evitar problemas ao excluir linhas
-        ' Verificar se a c�lula na coluna N est� vazia
+        ' Verificar se a c?lula na coluna N est? vazia
         If IsEmpty(ws.Cells(i, "N").Value) Then
-            ' Se a c�lula estiver vazia, deletar a linha
+            ' Se a c?lula estiver vazia, deletar a linha
             ws.Rows(i).Delete
         Else
-            ' Verificar se o valor da coluna M � maior que zero
+            ' Verificar se o valor da coluna M ? maior que zero
             If ws.Cells(i, "M").Value > 0 Then
                 ' Verificar se a coluna Q tem o valor "FRE-NRM"
                 If ws.Cells(i, "Q").Value = "FRE-NRM" Then
@@ -1028,7 +1028,7 @@ End Sub
 Sub preencher_valores_MC2()
 
     ' Preenche os precos da medicao conforme o lote selecionado na guia MC.
-    ' Declarar vari�veis
+    ' Declarar vari?veis
     Dim wsMC As Worksheet
     Dim lote As String
     
@@ -1040,7 +1040,7 @@ Sub preencher_valores_MC2()
     
     ' Se for Lote 1 (RJ, SP, DF, ES)
     If lote = "Lote 1 - RJ" Or lote = "Lote 1 - SP" Or lote = "Lote 1 - DF" Or lote = "Lote 1 - ES" Then
-        ' Preencher as c�lulas de L13 a L52 para Lote 1
+        ' Preencher as c?lulas de L13 a L52 para Lote 1
         wsMC.Range("L13").Value = 0.93
         wsMC.Range("L16").Value = 3.11
         wsMC.Range("L19").Value = 0.48
@@ -1072,7 +1072,7 @@ Sub preencher_valores_MC2()
         
     ' Se for Lote 2
     ElseIf lote = "Lote 2" Then
-        ' Preencher as c�lulas de L13 a L52 para Lote 2
+        ' Preencher as c?lulas de L13 a L52 para Lote 2
         wsMC.Range("L13").Value = 0.93
         wsMC.Range("L16").Value = 4.53
         wsMC.Range("L19").Value = 0.74
@@ -1103,10 +1103,10 @@ Sub preencher_valores_MC2()
         wsMC.Range("L52").Value = 0
     End If
     
-    ' Aplicar o formato de n�mero nas c�lulas de L13 a L52
+    ' Aplicar o formato de n?mero nas c?lulas de L13 a L52
     wsMC.Range("L13:L52").NumberFormat = "0.00"
     
-    'formatar valores para exibi��o de forma cont�bil
+    'formatar valores para exibi??o de forma cont?bil
     Sheets("MC").Select
     Range("L13:M52").Select
     Selection.NumberFormat = "_($* #,##0.00_);_($* (#,##0.00);_($* ""-""??_);_(@_)"
@@ -1164,8 +1164,8 @@ Sub preencher_valores_MC2()
         ActiveWorkbook.Save
         
         
-    ' Informar ao usu�rio que o processo foi conclu�do
-    MsgBox "Dados de atendimento conclu�do!", vbInformation
+    ' Informar ao usu?rio que o processo foi conclu?do
+    MsgBox "Dados de atendimento conclu?do!", vbInformation
     
     
     Call importar_e_calcular_ARM

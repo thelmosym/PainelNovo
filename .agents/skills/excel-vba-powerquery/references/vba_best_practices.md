@@ -136,3 +136,38 @@ Sub ExemploDicionario()
     End If
 End Sub
 ```
+
+---
+
+## 6. Codificação de Arquivos e Compatibilidade com o Editor do VBA (Português/VBE)
+
+O editor do VBA (*Visual Basic Editor - VBE*) do Microsoft Excel é uma aplicação legada baseada em Windows ANSI. Ele **NÃO oferece suporte nativo a UTF-8**.
+
+### Consequências de Salvar em UTF-8:
+* Textos e comentários em português com acentuação (`á`, `é`, `í`, `ó`, `ú`, `ã`, `õ`, `ç`) transformam-se em sequências corrompidas de bytes (*mojibake*, como `Ã¡`, `Ã§Ã£o`).
+* Emojis de 4 bytes (como `🟡`, `🟢`, `✅`, `❌`) transformam-se em caracteres ilegíveis (`ðŸŸ¡`) ou provocam erros de sintaxe em tempo de compilação.
+* Ao importar arquivos `.bas` exportados sem o cabeçalho `Attribute VB_Name`, o Excel renomeia o módulo arbitrariamente para `Módulo1`.
+
+### Padrão Técnico Obrigatório para Códigos VBA:
+1. **Codificação Windows-1252 (CP1252 / ANSI):**
+   Todos os arquivos `.bas`, `.cls`, `.frm` e `.vba` do repositório devem ser gerados e mantidos estritamente na codificação **Windows-1252**.
+2. **Terminações de Linha CRLF (`\r\n`):**
+   Sempre utilizar quebras de linha padrão Windows (`CRLF`). Quebras Unix puras (`LF`) podem causar exibição em linha única no VBE.
+3. **Substituição de Emojis por Tags Textuais em Português:**
+   * `🟡` $\rightarrow$ `[AMARELO]`
+   * `🟢` $\rightarrow$ `[VERDE]`
+   * `🔴` $\rightarrow$ `[VERMELHO]`
+   * `✅` $\rightarrow$ `[OK]`
+   * `⚠️` $\rightarrow$ `[AVISO]`
+   * `❌` $\rightarrow$ `[ERRO]`
+4. **Cabeçalho de Módulo Mandatório:**
+   A primeira linha de qualquer módulo `.bas` deve conter:
+   ```vba
+   Attribute VB_Name = "NomeDoModulo"
+   ```
+5. **Automação com o Utilitário `fix_vba_encoding.py`:**
+   Execute periodicamente ou após modificações:
+   ```bash
+   python .agents/skills/excel-vba-powerquery/scripts/fix_vba_encoding.py "Codes/VBA"
+   ```
+

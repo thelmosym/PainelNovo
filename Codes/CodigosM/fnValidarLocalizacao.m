@@ -1,9 +1,9 @@
 let
     // -------------------------------------------------------------------
     // fnValidarLocalizacao
-    // Verifica se a atividade está entre as que permitem validação de
+    // Verifica se a atividade esta entre as que permitem validacao de
     // dados entre localidades (usado para gerar o campo Localidade do
-    // galpão de guarda / cálculo de KM adicional).
+    // galpao de guarda / calculo de KM adicional).
     // -------------------------------------------------------------------
     fnValidarLocalizacao = (sAtividade as nullable text) as logical =>
         List.Contains({

@@ -1,45 +1,45 @@
 let
     // -------------------------------------------------------------------
     // fnCalcularQExecAgrupado
-    // -----------------------------------------------------------------
-    // Cálculo ADICIONAL/PARALELO ao QExec por linha (fnCalcularQExec).
-    // Cria um índice de agrupamento a partir de (Data Abertura + Local
+    // -------------------------------------------------------------------
+    // Calculo ADICIONAL/PARALELO ao QExec por linha (fnCalcularQExec).
+    // Cria um indice de agrupamento a partir de (Data Abertura + Local
     // PETROBRAS + Local da empresa de guarda), soma o QExec de todas
-    // as linhas com o mesmo índice, e atribui o resultado da fórmula
+    // as linhas com o mesmo indice, e atribui o resultado da formula
     // de frete/agrupamento (soma/10, piso 1) APENAS na linha de
-    // primeira ocorrência do índice — mesmo padrão de deduplicação
+    // primeira ocorrencia do indice - mesmo padrao de deduplicacao
     // usado em concatenar_dados_FDM (VBA) e CalcularQuilometragemAdicional
     // (Sistema 2, via Collection).
     //
     // O QUE FAZ:
     //   resultado = 1,          se (soma do grupo / 10) <= 1
-    //   resultado = soma / 10,  caso contrário
-    //   As demais linhas do mesmo grupo (não a 1ª ocorrência) recebem
+    //   resultado = soma / 10,  caso contrario
+    //   As demais linhas do mesmo grupo (nao a 1a ocorrencia) recebem
     //   null nesta coluna.
     //
-    // ? CORREÇÃO APLICADA (durante os testes em produção):
+    // ? CORRECAO APLICADA (durante os testes em producao):
     //   Se TODAS as linhas de um grupo tiverem QExec = null (ex.:
     //   grupo formado inteiramente por "MATERIAL PARA ARQUIVAMENTO"/
     //   "BAIXA PERMANENTE"), List.Sum de uma lista vazia retornaria
-    //   null, causando o erro "Não conseguimos converter o valor null
+    //   null, causando o erro "Nao conseguimos converter o valor null
     //   em tipo Logical" ao comparar null <= 1. Corrigido verificando
     //   explicitamente List.IsEmpty antes de somar, e propagando null
-    //   como resultado final nesse caso, em vez de tentar a divisão/
-    //   comparação.
+    //   como resultado final nesse caso, em vez de tentar a divisao/
+    //   comparacao.
     //
-    // PARÂMETROS:
-    //   tabela            - tabela de entrada (já com QExec calculado
+    // PARAMETROS:
+    //   tabela            - tabela de entrada (ja com QExec calculado
     //                       por fnCalcularQExec)
     //   colDataFechamento   - nome da coluna de Data de Fechamento
     //   colLocalPetrobras - nome da coluna de Localidade PETROBRAS
     //   colLocalGuarda    - nome da coluna de Localidade da empresa de
-    //                       guarda (galpão)
-    //   colQExec          - nome da coluna já contendo o QExec por
+    //                       guarda (galpao)
+    //   colQExec          - nome da coluna ja contendo o QExec por
     //                       linha
     //
     // RETORNO:
-    //   table — a mesma tabela de entrada, com a coluna adicional
-    //   "QExecAgrupado" preenchida apenas na 1ª ocorrência de cada
+    //   table - a mesma tabela de entrada, com a coluna adicional
+    //   "QExecAgrupado" preenchida apenas na 1a ocorrencia de cada
     //   grupo
     // -------------------------------------------------------------------
     fnCalcularQExecAgrupado = (
@@ -52,25 +52,23 @@ let
         let
             // 1) Monta a chave de agrupamento (Data + Local PETROBRAS +
             //    Local Guarda), equivalente ao "sDado1" concatenado
-            //    visto nos códigos VBA analisados
+            //    visto nos codigos VBA analisados
             ComChave = Table.AddColumn(tabela, "_ChaveAgrupamento", each
                 Text.From(Record.Field(_, colDataFechamento), "pt-BR")
                 & "|" & Text.From(Record.Field(_, colLocalPetrobras))
                 & "|" & Text.From(Record.Field(_, colLocalGuarda))
             ),
-
-            // 2) Índice sequencial estável — necessário para localizar
-            //    a primeira ocorrência de cada chave
+            // 2) Indice sequencial estavel - necessario para localizar
+            //    a primeira ocorrencia de cada chave
             ComIndice = Table.AddIndexColumn(ComChave, "_Indice", 0, 1, Int64.Type),
-
-            // 3) Agrupa por chave: acha o índice mínimo (1ª ocorrência)
+            // 3) Agrupa por chave: acha o indice minimo (1a ocorrencia)
             //    e soma o QExec de todas as linhas do grupo
             Agrupado = Table.Group(ComIndice, {"_ChaveAgrupamento"}, {
                 {"_IndiceMinimo", each List.Min([_Indice]), Int64.Type},
                 {"_SomaQExec", each
                     let
                         valores = List.RemoveNulls(Table.Column(_, colQExec)),
-                        // ? Se não houver nenhum valor válido no
+                        // ? Se nao houver nenhum valor valido no
                         // grupo, retorna null em vez de deixar
                         // List.Sum({}) produzir null "por acidente"
                         soma = if List.IsEmpty(valores) then null else List.Sum(valores)
@@ -79,18 +77,16 @@ let
                     type nullable number
                 }
             }),
-
-            // 4) Traz de volta o índice mínimo e a soma do grupo para
+            // 4) Traz de volta o indice minimo e a soma do grupo para
             //    cada linha original
             Mesclado = Table.NestedJoin(ComIndice, {"_ChaveAgrupamento"},
                 Agrupado, {"_ChaveAgrupamento"}, "_Grupo", JoinKind.LeftOuter),
             Expandido = Table.ExpandTableColumn(Mesclado, "_Grupo",
                 {"_IndiceMinimo", "_SomaQExec"}, {"_IndiceMinimo", "_SomaQExec"}),
-
-            // 5) Aplica o cálculo APENAS na linha de 1ª ocorrência
+            // 5) Aplica o calculo APENAS na linha de 1a ocorrencia
             //    (Indice = IndiceMinimo); demais linhas = null.
-            //    Também protege contra soma nula (grupo sem QExec
-            //    válido nenhum).
+            //    Tambem protege contra soma nula (grupo sem QExec
+            //    valido nenhum).
             ComResultado = Table.AddColumn(Expandido, "QExecAgrupado", each
                 if [_Indice] = [_IndiceMinimo] then
                     if [_SomaQExec] = 0 or [_SomaQExec] = null then
@@ -101,8 +97,7 @@ let
                 else
                     null
             ),
-
-            // 6) Remove colunas auxiliares, mantendo só o resultado final
+            // 6) Remove colunas auxiliares, mantendo so o resultado final
             Limpeza = Table.RemoveColumns(ComResultado,
                 {"_ChaveAgrupamento", "_Indice", "_IndiceMinimo", "_SomaQExec"}
             )

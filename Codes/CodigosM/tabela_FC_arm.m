@@ -1,5 +1,5 @@
 let
     Fonte = Excel.CurrentWorkbook(){[Name="tabela_FC_arm"]}[Content],
-    #"Tipo Alterado" = Table.TransformColumnTypes(Fonte,{{"Atividade do painel", type text}, {"Tab. Contrato", type text}, {"DescriÁ„o da tabela", type text}, {"Item", type text}, {"Di‚metro", Int64.Type}, {"A", type number}, {"L", type number}, {"P", type number}, {"FC", type number}})
+    #"Tipo Alterado" = Table.TransformColumnTypes(Fonte,{{"Atividade do painel", type text}, {"Tab. Contrato", type text}, {"Descri√ß√£o da tabela", type text}, {"Item", type text}, {"Di√¢metro", Int64.Type}, {"A", type number}, {"L", type number}, {"P", type number}, {"FC", type number}})
 in
     #"Tipo Alterado"

@@ -1,11 +1,11 @@
 let
     Fonte = Excel.CurrentWorkbook(){[Name="tabelaPrazoContrato"]}[Content],
-    #"Tipo Alterado" = Table.TransformColumnTypes(Fonte,{{"Contrato", type text}, {"Atividade do painel", type text}, {"Tab. Contrato", type text}, {"Grupo de município", type text}, {"Classificação", type text}, {"Prazo", type number}}),
-    #"Personalização Adicionada" = Table.AddColumn(#"Tipo Alterado", "codPrazoContrato", each [Contrato]
+    #"Tipo Alterado" = Table.TransformColumnTypes(Fonte,{{"Contrato", type text}, {"Atividade do painel", type text}, {"Tab. Contrato", type text}, {"Grupo de municÃ­pio", type text}, {"ClassificaÃ§Ã£o", type text}, {"Prazo", type number}}),
+    #"PersonalizaÃ§Ã£o Adicionada" = Table.AddColumn(#"Tipo Alterado", "codPrazoContrato", each [Contrato]
 &"\"&
-[Atividade do painel] 
+[Atividade do painel]
 &"\"&
-[Grupo de município]),
-    #"Colunas Reordenadas" = Table.ReorderColumns(#"Personalização Adicionada",{"codPrazoContrato", "Contrato", "Atividade do painel", "Tab. Contrato", "Grupo de município", "Classificação", "Prazo"})
+[Grupo de municÃ­pio]),
+    #"Colunas Reordenadas" = Table.ReorderColumns(#"PersonalizaÃ§Ã£o Adicionada",{"codPrazoContrato", "Contrato", "Atividade do painel", "Tab. Contrato", "Grupo de municÃ­pio", "ClassificaÃ§Ã£o", "Prazo"})
 in
     #"Colunas Reordenadas"
