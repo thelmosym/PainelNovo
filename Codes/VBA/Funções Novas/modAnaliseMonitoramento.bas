@@ -203,10 +203,11 @@ Public Sub AnalisarErrosMonitoramentoEGerarLog()
     Application.StatusBar = "Gravando logs na Coluna Z..."
     wsMonit.Range(wsMonit.Cells(LINHA_INICIAL_DADOS, COLUNA_LOG_NUM), wsMonit.Cells(ul, COLUNA_LOG_NUM)).Value = vLog
     
-    ' Formatação condicional/destaque visual básico para a coluna de log
+    ' Formatação visual da coluna de log: texto em vermelho para os logs gerados
     With wsMonit.Range(wsMonit.Cells(LINHA_INICIAL_DADOS, COLUNA_LOG_NUM), wsMonit.Cells(ul, COLUNA_LOG_NUM))
         .Font.Name = "Calibri"
         .Font.Size = 9
+        .Font.Color = vbRed   ' Cor do texto do log gerado em vermelho
         .WrapText = True
     End With
     
@@ -441,10 +442,10 @@ Private Sub AuditarLinhaMonitoramento(ByRef vDados As Variant, ByVal r As Long, 
         sLog = sLog & "(Coluna L): Data inválida; "
     End If
     
-    '--- 13. COLUNA M: PRAZO APLICAÇÃO ---
+    '--- 13. COLUNA M: PRAZO APLICAÇÃO (CONSIDERADO COMO HORAS) ---
     If Not IsEmpty(vPrazoApp) And Len(Trim(CStr(vPrazoApp & ""))) > 0 Then
-        If Not IsDate(vPrazoApp) Then
-            sLog = sLog & "(Coluna M): Data inválida; "
+        If Not EhHoraValida(vPrazoApp) Then
+            sLog = sLog & "(Coluna M): Hora inválida; "
         End If
     End If
     
@@ -664,6 +665,92 @@ End Sub
 '-------------------------------------------------------------------------------------------------------------------
 ' RESUMO DA EXECUÇÃO APRESENTADO AO USUÁRIO
 '-------------------------------------------------------------------------------------------------------------------
+
+'-------------------------------------------------------------------------------------------------------------------
+' FUNÇÃO AUXILIAR: Valida se o valor representa uma quantidade ou formato válido de horas (não data)
+'-------------------------------------------------------------------------------------------------------------------
+Private Function EhHoraValida(ByVal vValor As Variant) As Boolean
+    Dim sTexto As String
+    Dim dVal As Double
+    Dim vPartes As Variant
+    Dim h As Double, m As Double, s As Double
+    Dim sLimpo As String
+    
+    If IsEmpty(vValor) Then
+        EhHoraValida = False
+        Exit Function
+    End If
+    
+    sTexto = Trim(CStr(vValor & ""))
+    If Len(sTexto) = 0 Then
+        EhHoraValida = False
+        Exit Function
+    End If
+    
+    ' Se contiver barra ("/") ou traço indicando formato de data de calendário, não é hora pura
+    If InStr(sTexto, "/") > 0 Then
+        EhHoraValida = False
+        Exit Function
+    End If
+    If InStr(sTexto, "-") > 0 And Left(sTexto, 1) <> "-" Then
+        EhHoraValida = False
+        Exit Function
+    End If
+    
+    ' Caso 1: Valor numérico direto (ex.: 0, 8, 24, 48, 0.5)
+    If IsNumeric(sTexto) Then
+        dVal = CDbl(sTexto)
+        If dVal >= 0 Then
+            ' Se o tipo for nativo Date e possuir valor de calendário (ano > 1900, dVal >= 365)
+            If TypeName(vValor) = "Date" And dVal >= 365 Then
+                EhHoraValida = False
+            Else
+                EhHoraValida = True
+            End If
+            Exit Function
+        Else
+            EhHoraValida = False
+            Exit Function
+        End If
+    End If
+    
+    ' Caso 2: Formato com dois pontos (ex.: "08:00", "24:00", "08:00:00", "72:30")
+    If InStr(sTexto, ":") > 0 Then
+        vPartes = Split(sTexto, ":")
+        If UBound(vPartes) >= 1 And UBound(vPartes) <= 2 Then
+            If IsNumeric(vPartes(0)) And IsNumeric(vPartes(1)) Then
+                h = CDbl(vPartes(0))
+                m = CDbl(vPartes(1))
+                If h >= 0 And m >= 0 And m < 60 Then
+                    If UBound(vPartes) = 2 Then
+                        If IsNumeric(vPartes(2)) Then
+                            s = CDbl(vPartes(2))
+                            If s >= 0 And s < 60 Then EhHoraValida = True
+                        End If
+                    Else
+                        EhHoraValida = True
+                    End If
+                    Exit Function
+                End If
+            End If
+        End If
+    End If
+    
+    ' Caso 3: Formato com sufixo "h" ou "hs" (ex.: "8h", "24h", "48 hs")
+    sLimpo = LCase(sTexto)
+    sLimpo = Replace(sLimpo, "hs", "")
+    sLimpo = Replace(sLimpo, "h", "")
+    sLimpo = Trim(sLimpo)
+    If IsNumeric(sLimpo) Then
+        If CDbl(sLimpo) >= 0 Then
+            EhHoraValida = True
+            Exit Function
+        End If
+    End If
+    
+    EhHoraValida = False
+End Function
+
 Private Sub ExibirResumoAuditoria(ByVal iTotal As Long, ByVal iAuditadas As Long, ByVal iComErro As Long, ByVal tSegundos As Double)
     Dim sMsg As String
     Dim iOK As Long

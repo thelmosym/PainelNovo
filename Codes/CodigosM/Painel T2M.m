@@ -437,16 +437,17 @@ LimpezaColunasKM = Table.RemoveColumns(AdicionarKMAdicional, {"_ChaveKM", "_Indi
 // -------------------------------------------------------------------
 // SECAO 11 - QEXEC AGRUPADO (calculo adicional/paralelo)
 // -------------------------------------------------------------------
-// Cria um indice de agrupamento por Data Abertura + Localidade
-// PETROBRAS + Cidade do Galpao; soma o QExec de todas as linhas do
-// grupo e atribui o resultado da formula de frete (soma/10, piso 1)
-// somente na linha de primeira ocorrencia do grupo (as demais linhas
-// do mesmo grupo ficam com null nesta coluna).
+// Cria um indice de agrupamento por Data Fechamento + Localidade
+// PETROBRAS + Cidade do Galpao + Linha de Servico PPU (FRE-NRM vs FRE-EXP);
+// soma o QExec de todas as linhas do grupo e atribui o resultado da formula
+// de frete (soma/10, piso 1) somente na linha de primeira ocorrencia do grupo
+// (as demais linhas do mesmo grupo ficam com null nesta coluna).
 AdicionarQExecAgrupado = fnCalcularQExecAgrupado(
     LimpezaColunasKM,
     "Data Fechamento",
     "Localidade",
     "Galpãp_Cidade",
+    "Linha de serviço PPU",
     "QExec"
 ),
 // -------------------------------------------------------------------

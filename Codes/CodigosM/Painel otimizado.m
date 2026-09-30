@@ -291,9 +291,10 @@ cod_Tabela_FC = Table.AddColumn(ExpandirClassificacaoFDM, "cod_Tabela_FC", each 
 ),
 #"QExec Agrupado Calculado" = fnCalcularQExecAgrupado(
     #"Personalização Adicionada1",
-    "Data Abertura",
+    "Data Fechamento",
     "Localidade",
     "Galpãp_Cidade",
+    "Linha de serviço PPU",
     "QExec"
 )
 in

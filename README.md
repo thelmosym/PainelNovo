@@ -83,6 +83,7 @@ flowchart TD
     subgraph VBA_ORCH["⚙️ 4. Orquestrador VBA (Codes/VBA/Funções Novas/)"]
         VBA_REFRESH["modAtualizarConsultas.bas<br/>AtualizarTodasConsultasPowerQuery<br/>(Atualização síncrona com status bar)"]
         VBA_AUDIT["modAuditoriaLog.bas<br/>MotorFiscalizadorDADOS<br/>(Varredura em memória RAM e log)"]
+        VBA_AUDIT_PQ["modAuditoriaFontesPQ.bas<br/>AuditarFontesPowerQuery<br/>(Mapeamento de arquivos e fontes externas)"]
         VBA_EXPORT["modGerarArquivos.bas<br/>GerarArquivosPorContrato<br/>(Exportação de cadernos .xlsx limpos)"]
         VBA_DASH["modDashboard.bas<br/>(Cards de indicadores executivos)"]
     end
@@ -144,9 +145,9 @@ Conversão matemática de itens físicos heterogêneos para as unidades unificad
 - **Organização Simples:** Fator `0,5`
 - **Digitalização e Migração:** Fatores específicos das tabelas de conversão ([`tabela_FC_*`](Codes/CodigosM/tabela_FC.m)).
 
-### 6. Deduplicação de KM Adicional de Frete ([`Painel T2M.m`](Codes/CodigosM/Painel%20T2M.m))
-- Agrupamento inteligente de atendimentos por chave única: `Rota (Centro <-> Galpão) + Data de Abertura + Linha de Serviço PPU`.
-- Apenas a **primeira ocorrência** do grupo recebe a cobrança de KM adicional excedente ao raio de tolerância. As demais ordens da mesma viagem são marcadas como `null`, evitando cobranças indevidas de frete em duplicidade para a Petrobras.
+### 6. Frete e Deduplicação de KM Adicional ([`Painel T2M.m`](Codes/CodigosM/Painel%20T2M.m) & [`fnCalcularQExecAgrupado.m`](Codes/CodigosM/fnCalcularQExecAgrupado.m))
+- **Deduplicação de KM Adicional:** Agrupamento por `Rota (Centro <-> Galpão) + Data de Abertura + Linha de Serviço PPU`. Apenas a **primeira ocorrência** do grupo recebe a cobrança de KM excedente ao raio de tolerância.
+- **Agrupamento de Frete (QExecAgrupado):** Agrupamento por `Data Fechamento + Localidade Petrobras + Galpão + Linha de serviço PPU`. A inclusão explícita da **Linha de serviço PPU** separa rigorosamente Frete Normal (`FRE-NRM`) de Frete Expresso (`FRE-EXP`). Apenas a primeira ocorrência do grupo calcula a fórmula de frete ($\text{soma}/10$, com piso 1), enquanto as demais ordens da mesma viagem recebem `null`. Isso evita que viagens de frete com SLAs e tabelas de preço distintas realizadas no mesmo dia e rota anulem indevidamente umas às outras.
 
 ---
 
@@ -206,8 +207,8 @@ PainelNovo/
 │   └── resumo_projeto_medicao_13-08-2026.txt    # Histórico de apontamentos da migração inicial
 │
 ├── Monitoramento/                               # Pastas de entrada de dados operacionais
-│   ├── Monitoramento individual_A4UU_v3.0.xlsm  # Planilha individual operacional de referência
-│   ├── Monitoramento individual_DPBR_v3.0.xlsm
+│   ├── Monitoramento individual_A4UU_v4.xlsm    # Planilha individual operacional de referência (v4 / v3)
+│   ├── Monitoramento individual_DPBR_v4.xlsm
 │   ├── ...
 │   └── vba_extracted_A4UU/                      # Módulos VBA extraídos da planilha A4UU para versionamento
 │       ├── Planilha1.cls                        # Auditoria operacional de linha da planilha individual
@@ -240,6 +241,7 @@ PainelNovo/
     ├── VBA/
     │   ├── Funções Novas/                       # Módulos ativos e otimizados
     │   │   ├── modAuditoriaLog.bas              # Motor fiscalizador e auditor da base DADOS
+    │   │   ├── modAuditoriaFontesPQ.bas         # Mapeamento e auditoria de fontes externas Power Query
     │   │   ├── modAtualizarConsultas.bas        # Atualização síncrona do catálogo Power Query
     │   │   ├── modGerarArquivos.bas             # Geração automatizada dos arquivos finais por contrato
     │   │   └── modDashboard.bas                 # Renderização de dashboard e cards no Excel
@@ -299,6 +301,9 @@ A tabela abaixo sintetiza o ciclo recente de modernização e correções aplica
 
 | Componente | Tipo de Modificação | Descrição Detalhada |
 | :--- | :---: | :--- |
+| **Power Query M (`fnCalcularQExecAgrupado.m`)** | Correção de Regra de Negócio | Inclusão de `Linha de serviço PPU` na chave de agrupamento, separando Frete Normal (`FRE-NRM`) de Frete Expresso (`FRE-EXP`). Corrige a supressão de viagens expressas coincidentes em data e rota (restaurando as 2 viagens em `IRON-LT1-RJ`). Sincronizado em `Painel T2M.m`, `Painel otimizado.m` e diretamente no workbook `Painel de controle MemoriaPetrobras V6.xlsm`. |
+| **VBA (`modAuditoriaFontesPQ.bas`)** | Nova Funcionalidade | Criação do scanner completo de fontes externas Power Query (`AuditarFontesPowerQuery`), diagnosticando arquivos locais, pastas, conexões OLEDB/ODBC e gerando relatório técnico na aba `AUDITORIA_FONTES_PQ`. |
+| **Integridade de Conexões Excel** | Diagnóstico & Resolução | Identificação da causa raiz de desatualização na aba `DADOS_IRON-LT1-RJ`: tabela vinculada a conexão interna órfã/deletada (`connectionId=18`), corrigida para a conexão ativa. |
 | **Documentação Técnica** | Reorganização & Criação | Criação da pasta [`Docs/`](Docs/) consolidando documentações, criação dos manuais [`MANUAL_MODULO_AUDITORIA_LOG.md`](Docs/MANUAL_MODULO_AUDITORIA_LOG.md), [`MANUAL_MONITORAMENTO_INDIVIDUAL.md`](Docs/MANUAL_MONITORAMENTO_INDIVIDUAL.md) e do diagnóstico holístico [`ANALISE_COMPLETA_E_SUGESTOES_DE_MELHORIA.md`](Docs/ANALISE_COMPLETA_E_SUGESTOES_DE_MELHORIA.md). |
 | **VBA (`modAuditoriaLog.bas`)** | Refinamento de Negócio | Remoção da regra de duplicidade estrita para a chave `Atividade + Solicitação + OS`, eliminando falsos positivos na auditoria de chamados com múltiplos itens legítimos. |
 | **VBA Monitoramento** | Engenharia Reversa | Extração e versionamento dos códigos VBA do arquivo operacional `Monitoramento individual_A4UU_v3.0.xlsm` para a pasta [`Monitoramento/vba_extracted_A4UU/`](Monitoramento/vba_extracted_A4UU/). |

@@ -2,7 +2,7 @@
 
 ## Painel de Controle MemoriaPetrobras V6.xlsm
 
-**Data da documentação:** 22/09/2026  
+**Data da documentação:** 22/09/2026 (Revisado e Atualizado em 29/09/2026)  
 **Escopo:** análise estática do workbook, dos códigos exportados e da estrutura de pastas em `D:\PainelNovo`.
 
 > Esta documentação descreve o que foi identificado nos arquivos disponíveis. A execução real das macros, a atualização das consultas e a conferência dos valores calculados ainda precisam ser validadas no Excel.
@@ -45,11 +45,11 @@ Contém os códigos exportados para versionamento e análise.
 
 Contém os arquivos de monitoramento individual que alimentam a consolidação. Foram observados arquivos como:
 
-- `Monitoramento individual_A4UU_v3.0.xlsm`
-- `Monitoramento individual_DPBR_v3.0.xlsm`
-- `Monitoramento individual_GPZ1_v3.0.xlsm`
-- `Monitoramento individual_GQ6S_v3.0.xlsm`
-- `Monitoramento individual_S2IJ_v3.0.xlsm`
+- `Monitoramento individual_A4UU_v4.xlsm` (e versões anteriores v3.0)
+- `Monitoramento individual_DPBR_v4.xlsm`
+- `Monitoramento individual_GPZ1_v4.xlsm`
+- `Monitoramento individual_GQ6S_v4.xlsm`
+- `Monitoramento individual_S2IJ_v4.xlsm`
 
 A consulta `Transformar Arquivo.m` abre os arquivos e procura a tabela `Monitoramento`.
 
@@ -249,7 +249,7 @@ A lógica documentada considera:
 - avanço para o próximo dia útil quando o tempo restante ultrapassa o expediente;
 - prazos de 0, 0,5, 1, 2, 3, 4 e 5 dias, conforme a função de prazo.
 
-A regra de `0,5` dia possui tratamento específico e deve ser validada com casos reais. Também deve ser confirmado se feriados por município/UF, usados pelo VBA legado, já estão sendo considerados na versão M atual.
+A regra de `0,5` dia possui tratamento específico e deve ser validada com casos reais. A integração de feriados foi concluída na função `fnCalcularDataSLA.m`, que agora consome a base unificada `Tabelas Especificas/Feriados_2026_2030.csv`, cruzando feriados nacionais, estaduais e municipais por Município e UF.
 
 ### 5.7 Cálculo de QExec
 
@@ -264,7 +264,31 @@ A função `fnCalcularQExec.m` calcula uma quantidade padronizada de execução.
 - `MATERIAL PARA ARQUIVAMENTO` e `BAIXA PERMANENTE`: sem QExec;
 - `DEVOLUCAO DE EMPRESTIMO`: regra dependente do item.
 
-A função `fnCalcularQExecAgrupado.m` trata situações em que o cálculo precisa considerar um agrupamento.
+A função `fnCalcularQExecAgrupado.m` trata situações em que o cálculo precisa considerar um agrupamento de transporte/frete.
+
+#### 5.7.1 Cálculo de QExec Agrupado para Frete (`fnCalcularQExecAgrupado.m`)
+
+Para atividades de transporte/frete, o faturamento não é apurado individualmente por ordem de serviço quando múltiplas ordens compartilham o mesmo deslocamento. A função `fnCalcularQExecAgrupado.m` implementa o agrupamento e a deduplicação de frete:
+
+- **Parâmetros da função:**
+  - `tabela`: tabela de entrada já enriquecida com o `QExec` individual;
+  - `colDataFechamento`: coluna de data de fechamento do atendimento;
+  - `colLocalPetrobras`: coluna da localidade Petrobras (origem/destino);
+  - `colLocalGuarda`: coluna da cidade do galpão da contratada;
+  - `colLinhaServico`: coluna contendo a Linha de Serviço PPU (`Linha de serviço PPU`);
+  - `colQExec`: coluna com o `QExec` individual da linha.
+
+- **Composição da Chave de Agrupamento (`_ChaveAgrupamento`):**
+  A chave é montada de forma segura contra nulos:
+  `Data Fechamento | Localidade Petrobras | Galpão_Cidade | Linha de serviço PPU`.
+  > **Importante:** A inclusão explícita da `Linha de serviço PPU` garante a separação estrita entre Frete Normal (`FRE-NRM`) e Frete Expresso (`FRE-EXP`). Dessa forma, atendimentos com SLAs e tabelas de preço distintas realizados na mesma rota e no mesmo dia não colidem nem são anulados mutuamente (conforme regra legada em `A_Calc_Medicao.bas:492`).
+
+- **Regra de Cálculo ($\text{soma}/10$, piso 1):**
+  1. Identifica a **primeira ocorrência** de cada chave (menor índice sequencial estável);
+  2. Soma o `QExec` de todas as linhas que compartilham a chave;
+  3. Se a $\text{soma} / 10 \le 1$, o resultado do grupo é `1`; caso contrário, é $\text{soma} / 10$;
+  4. Atribui o resultado calculado **apenas na linha da primeira ocorrência** na coluna `QExecAgrupado`;
+  5. Todas as demais linhas subsequentes do mesmo grupo recebem `null`.
 
 ### 5.8 FDM mensal por contrato
 
@@ -425,6 +449,28 @@ A rotina:
 
 A função interna `GerarArquivoDoContrato` seleciona as abas de origem e monta o nome do arquivo com contrato, número, data e hora.
 
+### 8.3 Auditoria de Fontes Externas Power Query (`modAuditoriaFontesPQ.bas`)
+
+O módulo [Codes/VBA/Funções Novas/modAuditoriaFontesPQ.bas](Codes/VBA/Fun%C3%A7%C3%B5es%20Novas/modAuditoriaFontesPQ.bas) implementa a rotina `AuditarFontesPowerQuery`.
+
+Finalidade e funcionamento:
+1. Percorre todas as consultas em `ThisWorkbook.Queries` e todas as conexões em `ThisWorkbook.Connections`;
+2. Inspeciona as fórmulas em Linguagem M em busca de conectores de dados externos (`Folder.Files`, `File.Contents`, `Excel.Workbook`, `Csv.Document`, `Odbc.Query`, `Web.Contents`, `Sql.Database`, etc.);
+3. Extrai os caminhos de pastas, arquivos e parâmetros utilizados por cada consulta;
+4. Identifica o tipo de fonte, status da consulta (ativa, intermediária ou órfã) e relacionamentos com tabelas do workbook;
+5. Cria/atualiza a aba `AUDITORIA_FONTES_PQ` com formatação profissional, tabela estruturada, resumo executivo e métricas de fontes locais vs. fontes parametrizadas.
+
+### 8.4 Módulo de Auditoria Preventiva e Qualidade de Dados (`modAuditoriaLog.bas`)
+
+O módulo [Codes/VBA/Funções Novas/modAuditoriaLog.bas](Codes/VBA/Fun%C3%A7%C3%B5es%20Novas/modAuditoriaLog.bas) implementa a rotina `MotorFiscalizadorDADOS`.
+
+Destaques da implementação:
+1. **Mapeamento Flexível de Cabeçalhos:** Localiza colunas independentemente de acentuação, maiúsculas/minúsculas ou quebras de linha (`_x000a_`);
+2. **Processamento em Memória (RAM):** Carrega a base inteira em arrays na memória, fiscalizando milhares de registros em segundos;
+3. **Classificação de Inconsistências:** Diferencia apontamentos entre `CRÍTICO` (datas invertidas, campos obrigatórios nulos) e `ALERTA` (campos incompletos sem impedimento imediato);
+4. **Relatório Visual Interativo:** Gera ou atualiza a aba `LOG_CRITICAS` com contadores, cartões de métricas e hiperlinks diretos que navegam o usuário para a célula exata da inconsistência;
+5. **Ajuste de Negócio Operacional:** A verificação de duplicidade de chaves `Atividade + Solicitação + OS` foi suprimida para permitir ordens legítimas com múltiplos itens/etapas complementares.
+
 ## 9. Fluxo resumido ponta a ponta
 
 ```text
@@ -489,17 +535,18 @@ Algumas consultas exportadas usam caminhos absolutos, como `D:\PainelNovo\Monito
 
 **Melhoria recomendada:** manter os caminhos em células nomeadas ou em uma tabela de configuração e fazer as consultas M lerem esses parâmetros por `Excel.CurrentWorkbook()`.
 
-### Conexões duplicadas ou órfãs
+### Conexões duplicadas, órfãs ou dessincronizadas em tabelas de saída
 
 A macro de atualização percorre todas as conexões. Conexões duplicadas podem aumentar o tempo, causar mensagens de erro ou atualizar resultados que não são necessários para a operação do painel.
 
-**Melhoria recomendada:** manter uma lista explícita de consultas principais e auxiliares, ou validar as conexões antes da atualização.
+Além disso, em pastas de trabalho com dezenas de consultas, tabelas do Excel (`ListObjects`) podem perder a amarração correta com sua consulta ativa do Power Query:
+- **Caso Real Diagnosticado:** Na aba `DADOS_IRON-LT1-RJ`, a tabela `DADOS_IRON_LT1_RJ` estava atrelada a uma conexão interna órfã (`connectionId="18"`, marcada como deletada), enquanto a consulta Power Query ativa estava na conexão `connectionId="22"`. Isso fazia com que forçar a atualização na tabela não refletisse os dados novos gerados pelo Power Query.
+- **Solução / Mitigação:** Usar a macro de auditoria `AuditarFontesPowerQuery` (`modAuditoriaFontesPQ.bas`) para verificar a correspondência entre tabelas e conexões ativas.
 
-### Divergência entre VBA e M
+### Divergência entre VBA e M (Feriados)
 
-A mesma regra de SLA pode existir em versões diferentes. O VBA legado consulta feriados por município/UF, enquanto as funções M analisadas aparentam considerar dias de segunda a sexta-feira.
-
-**Risco:** a mesma solicitação pode receber datas ou classificações diferentes conforme o fluxo usado.
+Originalmente, o VBA legado consultava feriados por município/UF, enquanto as funções M iniciais consideravam apenas dias úteis de segunda a sexta.
+- **Status:** **Resolvido**. A função `fnCalcularDataSLA.m` foi modernizada e integrada com a base unificada `Feriados_2026_2030.csv`, considerando calendário nacional, estadual e municipal com filtros de Município e UF.
 
 ### Tratamento silencioso de erros em M
 
@@ -567,16 +614,15 @@ A implementação deve priorizar indicadores derivados das consultas existentes.
 11. Executar `GerarArquivosPorContrato` e conferir as quatro abas de cada arquivo.
 12. Confirmar se os links em `Painel!K7:K10` apontam para a última geração.
 
-## 14. Pendências de confirmação
+## 14. Status e Resoluções de Itens do Projeto
 
-- Qual consulta é a fonte oficial de cada aba carregada.
-- Se as conexões duplicadas são intencionais.
-- Se feriados devem entrar no cálculo M de SLA.
-- Se `Data SLA` e `Prazo SLA` devem seguir exatamente a mesma regra para `0,5` dia.
-- Qual fluxo de exportação é oficial: o novo por contrato ou o legado.
-- Se `PA-LT2` deve ser exibido sempre como `PA-LT2` ou `PA-LT2-BA`.
-- Se as abas consolidadas e regionais continuarão coexistindo.
-- Se todos os arquivos de monitoramento mantêm o mesmo esquema de colunas.
+- **Feriados no cálculo M de SLA:** [RESOLVIDO] Implementado via `fnCalcularDataSLA.m` integrando a base `Feriados_2026_2030.csv` com filtros de Município e UF.
+- **Frete Expresso vs. Frete Normal:** [RESOLVIDO] Inclusão de `Linha de serviço PPU` na chave de `fnCalcularQExecAgrupado.m`, corrigindo agrupamento indevido no contrato `IRON-LT1-RJ` (restaurando as 2 viagens expressas).
+- **Auditoria de fontes externas e conexões:** [IMPLEMENTADO] Criado o módulo `modAuditoriaFontesPQ.bas` para rastreamento de caminhos e conectores.
+- **Regra de duplicidade em OS:** [RESOLVIDO] Removida a checagem rígida de duplicidade em `modAuditoriaLog.bas`, aceitando múltiplos itens por OS conforme a realidade operacional.
+- **Sincronização de fórmulas no workbook:** [PADRONIZADO] Consultas `fnCalcularQExecAgrupado`, `Painel T2M` e `Painel otimizado` sincronizadas no workbook principal `Painel de controle MemoriaPetrobras V6.xlsm`.
+- **Qual fluxo de exportação é oficial:** O fluxo novo por contrato (`modGerarArquivos.bas`) gera arquivos limpos em `MEDIÇÃO/` com as 4 abas contratuais (`MC`, `ARM`, `DADOS`, `FRETE`).
+- **Se todos os arquivos de monitoramento mantêm o mesmo esquema de colunas:** Validado via `Transformar Arquivo.m`.
 
 ## 15. Conclusão
 
