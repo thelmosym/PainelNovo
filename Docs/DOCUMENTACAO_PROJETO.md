@@ -407,14 +407,14 @@ A rotina:
 
 1. usa `ThisWorkbook` como workbook de origem;
 2. conta as conexões;
-3. localiza a aba `Painel` e a célula de status `B12`;
+3. localiza a aba `Painel` e a célula de status `F9`;
 4. solicita confirmação ao usuário;
 5. desabilita eventos;
 6. percorre `wb.Connections`;
 7. tenta forçar `BackgroundQuery = False`;
 8. atualiza cada conexão individualmente;
 9. aguarda consultas assíncronas;
-10. escreve o resultado em `B12` e na barra de status;
+10. escreve o resultado em `F9` e na barra de status;
 11. exibe um resumo em `MsgBox`.
 
 Pontos de atenção:
@@ -443,11 +443,15 @@ A rotina:
 2. cria ou localiza a pasta `MEDIÇÃO` ao lado do workbook;
 3. confirma os contratos e tipos de aba;
 4. gera um arquivo por contrato;
-5. copia as abas `MC`, `ARM`, `DADOS` e `FRETE`;
-6. grava links em `Painel!K7:K10`;
+5. copia as abas `MC`, `ARM`, `DADOS` e `FRETE`:
+   - **Aba `MC`:** Preserva fórmulas dinâmicas do Excel (`SOMASE`, subtotais, multiplicadores e totais), redirecionando referências externas do workbook principal para as abas locais (`ARM!`, `DADOS!`, etc.);
+   - **Abas `ARM` e `DADOS`:** Copiadas com dados e formatação completa, recriando as tabelas estruturadas (`ListObjects`) com a nomenclatura original (`ARM_<CONTRATO>`, `DADOS_<CONTRATO>`) para resolver referências estruturadas nas fórmulas da `MC`;
+   - **Desconexão de Vínculos Externos (`BreakLink`):** Links para tabelas auxiliares não exportadas (`PPU` e `TabelaFDMPorContrato`) são convertidos em valores via `BreakLink`, eliminando mensagens de erro de vínculos quebrados ao abrir o arquivo;
+   - **Aba `FRETE`:** Copiada com valores e formatação completa;
+6. grava links em `Painel!F14:F17` (com sinalização por cores: Amarelo durante o processo, Verde Claro para sucesso e Vermelho para erros);
 7. informa sucessos e falhas.
 
-A função interna `GerarArquivoDoContrato` seleciona as abas de origem e monta o nome do arquivo com contrato, número, data e hora.
+A função interna `GerarArquivoDoContrato` seleciona as abas de origem, orquestra a cópia com fórmulas na `MC`, recria as tabelas estruturadas e monta o nome do arquivo com contrato, número, data e hora.
 
 ### 8.3 Auditoria de Fontes Externas Power Query (`modAuditoriaFontesPQ.bas`)
 
@@ -612,7 +616,7 @@ A implementação deve priorizar indicadores derivados das consultas existentes.
 9. Testar uma localidade sem correspondência na tabela de referência.
 10. Interromper ou provocar erro em uma conexão e confirmar a restauração dos estados do Excel.
 11. Executar `GerarArquivosPorContrato` e conferir as quatro abas de cada arquivo.
-12. Confirmar se os links em `Painel!K7:K10` apontam para a última geração.
+12. Confirmar se os links em `Painel!F14:F17` apontam para a última geração e exibem fundo verde claro.
 
 ## 14. Status e Resoluções de Itens do Projeto
 
@@ -621,7 +625,7 @@ A implementação deve priorizar indicadores derivados das consultas existentes.
 - **Auditoria de fontes externas e conexões:** [IMPLEMENTADO] Criado o módulo `modAuditoriaFontesPQ.bas` para rastreamento de caminhos e conectores.
 - **Regra de duplicidade em OS:** [RESOLVIDO] Removida a checagem rígida de duplicidade em `modAuditoriaLog.bas`, aceitando múltiplos itens por OS conforme a realidade operacional.
 - **Sincronização de fórmulas no workbook:** [PADRONIZADO] Consultas `fnCalcularQExecAgrupado`, `Painel T2M` e `Painel otimizado` sincronizadas no workbook principal `Painel de controle MemoriaPetrobras V6.xlsm`.
-- **Qual fluxo de exportação é oficial:** O fluxo novo por contrato (`modGerarArquivos.bas`) gera arquivos limpos em `MEDIÇÃO/` com as 4 abas contratuais (`MC`, `ARM`, `DADOS`, `FRETE`).
+- **Qual fluxo de exportação é oficial:** [RESOLVIDO] O fluxo novo por contrato (`modGerarArquivos.bas`) gera arquivos limpos em `MEDIÇÃO/` com as 4 abas contratuais (`MC`, `ARM`, `DADOS`, `FRETE`), mantendo fórmulas dinâmicas ativas na aba `MC` vinculadas a `ARM` e `DADOS`, recriando tabelas estruturadas e convertendo vínculos externos residuais via `BreakLink`.
 - **Se todos os arquivos de monitoramento mantêm o mesmo esquema de colunas:** Validado via `Transformar Arquivo.m`.
 
 ## 15. Conclusão

@@ -151,7 +151,7 @@ Se não existir, a aba é criada automaticamente; se já existir, ela é limpa e
 Se a aba auditada possuir uma coluna chamada `LOG_AUDITORIA`, o módulo grava o resumo dos erros diretamente nela (ex.: `Contrato vazio; Fechamento anterior a abertura`), permitindo filtrar os problemas na própria tabela de trabalho.
 
 ### C. Atualização no Painel Operacional (`Painel`)
-Atualiza a célula `B14` da aba `Painel` com o status consolidado:
+Atualiza a célula `F12` da aba `Painel` com o status consolidado:
 * Se não houver pendências: `[OK] Auditoria (DD/MM HH:MM) - Sem Pendencias` (em verde).
 * Se houver pendências: `[ALERTA] Auditoria: X Criticos / Y Alertas (DD/MM HH:MM)` (em vermelho ou âmbar).
 

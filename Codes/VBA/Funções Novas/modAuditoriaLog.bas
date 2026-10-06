@@ -35,6 +35,7 @@ Private Const NOME_ABA_DADOS_PADRAO  As String = "DADOS"
 Private Const NOME_ABA_LOG_CRITICAS  As String = "LOG_CRITICAS"
 Private Const NOME_ABA_PAINEL        As String = "Painel"
 Private Const NOME_COLUNA_LOG_DADOS  As String = "LOG_AUDITORIA"
+Private Const ENDERECO_CELULA_STATUS As String = "F12"
 
 '-- Paleta Visual Corporativa (Estilo Dashboard / Relatorio Executivo)
 Private Const COR_CABECALHO_FUNDO    As Long = 2760975     ' RGB(15, 23, 42)   - Azul Petroleo Escuro
@@ -616,9 +617,9 @@ Private Sub AtualizarStatusPainel(ByVal sAbaBase As String, ByVal totalReg As Lo
     
     If wsPainel Is Nothing Then Exit Sub
     
-    '-- Grava na celula B14 (ou cria indicador de auditoria no painel operacional)
+    '-- Grava na celula F12 (indicador de auditoria no painel operacional)
     On Error Resume Next
-    With wsPainel.Range("B14")
+    With wsPainel.Range(ENDERECO_CELULA_STATUS)
         If criticos = 0 And alertas = 0 Then
             .Value = "[OK] Auditoria (" & Format(Now, "dd/mm hh:mm") & ") - Sem Pendencias"
             .Interior.Color = 5296274  ' Verde suave

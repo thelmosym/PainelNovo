@@ -4,7 +4,7 @@ Option Explicit
 '====================================================================================================
 ' MÓDULO: modAtualizarConsultas
 ' OBJETIVO: Força a atualização SÍNCRONA de todas as conexões e consultas Power Query do Workbook,
-'           exibindo o progresso em tempo real na célula B12 da aba 'Painel' com cores de status:
+'           exibindo o progresso em tempo real na célula F9 da aba 'Painel' com cores de status:
 '             [AMARELO] AMARELO  - Atualização em andamento
 '             [VERDE] VERDE    - Concluído com sucesso (registra data/hora e tempo decorrido)
 '             [VERMELHO] VERMELHO - Concluído com interrupção fatal
@@ -21,7 +21,7 @@ Private Const MSG_TITULO_ATUALIZACAO As String = "Atualização de Consultas Power
 
 ' Aba e célula onde o status visual será exibido
 Private Const NOME_PLANILHA_STATUS As String = "Painel"
-Private Const ENDERECO_CELULA_STATUS As String = "B12"
+Private Const ENDERECO_CELULA_STATUS As String = "F9"
 
 ' Paleta de cores corporativa para status visual (RGB)
 Private Const COR_AMARELO As Long = 65535        ' RGB(255, 255, 0)
@@ -74,7 +74,7 @@ Public Sub AtualizarTodasConsultasPowerQuery()
     
     On Error GoTo TratarErro
     
-    ' Mantemos ScreenUpdating ativo para que o redesenho da célula B12 seja visível
+    ' Mantemos ScreenUpdating ativo para que o redesenho da célula F9 seja visível
     Application.EnableEvents = False
     
     dtInicio = Now

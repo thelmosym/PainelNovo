@@ -183,11 +183,11 @@ Para detalhes exaustivos, consulte o guia [regras_fdm_e_qualidade.md](./referenc
 
 ## 9. Cadernos Contratuais Oficiais de Saída
 
-- Gerados na pasta `MEDIÇÃO/` em formato `.xlsx` desvinculado de conexões ativas:
-  1. **`MC` (Memória de Cálculo):** Fatura consolidada por item PPU, quantitativos finais, preço unitário e valor total.
-  2. **`ARM` (Armazenagem):** Demonstrativo de caixas e mídias custodiadas no mês.
-  3. **`DADOS` (Base Analítica):** Relatório detalhado chamado a chamado com SLA, datas e QExec.
-  4. **`FRETE` (Transporte):** Rastreabilidade de viagens, rotas, frete agrupado e KM adicional.
+- Gerados na pasta `MEDIÇÃO/` em formato `.xlsx` limpo e autônomo:
+  1. **`MC` (Memória de Cálculo):** Fatura consolidada por item PPU, quantitativos apurados, preços unitários e valores totais. **Mantém fórmulas ativas** (`SOMASE`, subtotais e totais) vinculadas às abas `ARM` e `DADOS` locais, com tabelas estruturadas recriadas e tabelas auxiliares externas convertidas via `BreakLink` (sem avisos de vínculos quebrados).
+  2. **`ARM` (Armazenagem):** Demonstrativo de caixas e mídias custodiadas no mês (dados analíticos estáticos e tabela estruturada `ListObject` recriada).
+  3. **`DADOS` (Base Analítica):** Relatório detalhado chamado a chamado com SLA, datas e QExec (dados analíticos estáticos e tabela estruturada `ListObject` recriada).
+  4. **`FRETE` (Transporte):** Rastreabilidade de viagens, rotas, frete agrupado e KM adicional (dados analíticos estáticos).
 - Nomenclatura oficial: `<NumeroSAP>-PLA-MemoriaPetrobras-<Contrato>_<DataHora>.xlsx`.
 
 ---

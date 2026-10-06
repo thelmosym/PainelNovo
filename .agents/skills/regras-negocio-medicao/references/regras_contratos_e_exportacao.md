@@ -92,5 +92,10 @@ Cada caderno gerado em formato puro `.xlsx` (desprovido de macros e sem conexõe
 ```
 
 ### 3.3 Regras de Limpeza e Integridade na Exportação
-1. **Valores Estáticos (Paste Values):** Fórmulas voláteis e referências externas a outros cadernos são convertidas em valores puros, garantindo que o fiscal da Petrobras abra o arquivo sem avisos de "Vínculos Quebrados".
-2. **Registro de Log e Hiperlinks no Painel:** Após a geração, os caminhos absolutos e hiperlinks clicáveis para os arquivos gerados são registrados na aba `Painel` (intervalo `K7:K10`), permitindo abertura imediata pelo operador.
+1. **Preservação de Fórmulas Dinâmicas na Aba `MC`:** Diferente de uma exportação estática convencional, a aba `MC` mantém as fórmulas matemáticas nativas do Excel (`SOMASE`, subtotais, multiplicadores e totais gerais), permitindo à fiscalização da Petrobras inspecionar e auditar a memória de cálculo de forma dinâmica e transparente.
+2. **Redirecionamento de Referências e Recriação de `ListObjects`:**
+   - As fórmulas que continham referências externas apontando para o workbook principal (`[Painel de controle MemoriaPetrobras V6.xlsm]`) são redirecionadas automaticamente para as abas locais correspondentes (`ARM!`, `DADOS!`, `FRETE!`, `MC!`).
+   - Nas abas `ARM` e `DADOS`, as tabelas estruturadas (`ListObjects`) são recriadas no arquivo de destino com a mesma nomenclatura de origem (ex.: `ARM_PA-LT2`, `DADOS_PA-LT2`), garantindo que fórmulas com sintaxe de tabela estruturada (ex.: `DADOS_PA-LT2[QExec]`) resolvam internamente sem erros `#REF!`.
+3. **Quebra de Vínculos Externos Residuais (`BreakLink`):** Consultas e tabelas de parâmetros não exportadas no caderno (como `PPU` e `TabelaFDMPorContrato`) têm seus vínculos convertidos em valores estáticos via `wbDestino.BreakLink (xlLinkTypeExcelLinks)`. Isso garante que o arquivo abra 100% limpo, sem caixas de diálogo de "Vínculos Quebrados" ou solicitações de atualização externa.
+4. **Bases Analíticas Estáticas (`ARM`, `DADOS`, `FRETE`):** Os dados analíticos dessas abas são copiados com formatação completa e valores fixados, assegurando estabilidade, rapidez de abertura e independência de consultas Power Query ou arquivos de monitoramento da rede.
+5. **Registro de Log e Hiperlinks no Painel:** Após a geração, os hiperlinks clicáveis para os arquivos gerados são registrados na aba `Painel` (intervalo `F14:F17`), com sinalização visual por cores: **Amarelo** durante a geração, **Verde Claro** para arquivos gerados com sucesso e **Vermelho** em caso de falha/erro.

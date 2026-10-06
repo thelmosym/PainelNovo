@@ -11,15 +11,21 @@ Option Explicit
 '   - Tipagem estrita 64-bit com variáveis Long para todas as linhas e índices de planilha.
 '   - Isolamento e restauração garantida de estado do Excel (Calculation, EnableEvents, ScreenUpdating).
 '   - Cópia atômica de larguras de coluna (xlPasteColumnWidths), eliminando loops lentos coluna a coluna.
-'   - Conversão de fórmulas em valores na aba MC para eliminação de vínculos externos.
-'   - Gravação de Hyperlinks na aba Painel (K7:K10) com carimbo de data/hora no nome do arquivo.
+'   - Cópia de fórmulas ativas na aba MC, redirecionando referências para as abas locais (ARM, DADOS, etc.)
+'     e quebrando apenas vínculos externos de tabelas de apoio não exportadas (PPU / FDM).
+'   - Gravação de Hyperlinks na aba Painel (F14:F17) com sinalização de cores (Amarelo, Verde Claro, Vermelho).
 '====================================================================================================
 
 Private Const MSG_TITULO As String = "Geração de Arquivos por Contrato"
 Private Const NOME_PLANILHA_LINKS As String = "Painel"
-Private Const COLUNA_CELULA_LINK As String = "K"
-Private Const LINHA_INICIAL_LINK As Long = 7
+Private Const COLUNA_CELULA_LINK As String = "F"
+Private Const LINHA_INICIAL_LINK As Long = 14
 Private Const NOME_SUBPASTA_DESTINO As String = "MEDIÇÃO"
+
+' Paleta de cores corporativa para status dos links na aba Painel (RGB)
+Private Const COR_STATUS_AMARELO     As Long = 65535        ' RGB(255, 255, 0)   - Amarelo (processando)
+Private Const COR_STATUS_VERDE_CLARO As Long = 5296274      ' RGB(146, 208, 80)  - Verde suave (mesmo padrão das demais rotinas)
+Private Const COR_STATUS_VERMELHO    As Long = 255          ' RGB(255, 0, 0)     - Vermelho (erro / falha)
 
 ' GUID do rótulo de confidencialidade "Pública" do tenant da Petrobras
 Private Const PUBLICO_LABEL_ID As String = "140b9f7d-8e3a-482f-9702-4b7ffc40985a"
@@ -96,6 +102,25 @@ Public Sub GerarArquivosPorContrato()
         Exit Sub
     End If
     
+    '-- Inicializa células F14:F17 em amarelo (indica geração em andamento)
+    Dim iInicial As Long
+    For iInicial = LBound(vContratos) To UBound(vContratos)
+        Dim rngIni As Range
+        Set rngIni = wsLinks.Range(COLUNA_CELULA_LINK & ObterLinhaCelulaLink(iInicial))
+        rngIni.Hyperlinks.Delete
+        rngIni.Value = "Gerando: " & CStr(vContratos(iInicial)) & "..."
+        If rngIni.MergeCells Then
+            rngIni.MergeArea.Interior.Color = COR_STATUS_AMARELO
+            rngIni.MergeArea.Font.Color = vbBlack
+            rngIni.MergeArea.Font.Bold = False
+        Else
+            rngIni.Interior.Color = COR_STATUS_AMARELO
+            rngIni.Font.Color = vbBlack
+            rngIni.Font.Bold = False
+        End If
+    Next iInicial
+    DoEvents
+    
     '-- Captura e isola o estado do ambiente do Excel
     appCalc = Application.Calculation
     bEvents = Application.EnableEvents
@@ -141,6 +166,28 @@ SairRotina:
     Application.ScreenUpdating = bScreen
     Application.StatusBar = False
     
+    '-- Garante que qualquer contrato que não tenha sido gerado com sucesso termine em vermelho
+    On Error Resume Next
+    If Not wsLinks Is Nothing And iArquivosOK < (UBound(vContratos) + 1) Then
+        Dim iFim As Long
+        For iFim = LBound(vContratos) To UBound(vContratos)
+            Dim rngFim As Range
+            Set rngFim = wsLinks.Range(COLUNA_CELULA_LINK & ObterLinhaCelulaLink(iFim))
+            If rngFim.Hyperlinks.Count = 0 Then
+                If rngFim.MergeCells Then
+                    rngFim.MergeArea.Interior.Color = COR_STATUS_VERMELHO
+                    rngFim.MergeArea.Font.Color = vbWhite
+                    rngFim.MergeArea.Font.Bold = True
+                Else
+                    rngFim.Interior.Color = COR_STATUS_VERMELHO
+                    rngFim.Font.Color = vbWhite
+                    rngFim.Font.Bold = True
+                End If
+            End If
+        Next iFim
+    End If
+    On Error GoTo 0
+    
     If iArquivosOK > 0 Then
         MsgBox "Processamento concluído com sucesso." & vbNewLine & vbNewLine & _
                "Arquivos gerados: " & iArquivosOK & " de " & (UBound(vContratos) + 1) & vbNewLine & vbNewLine & _
@@ -152,6 +199,31 @@ SairRotina:
     Exit Sub
 
 TratarErro:
+    On Error Resume Next
+    If Not wsLinks Is Nothing Then
+        Dim iErrIdx As Long
+        For iErrIdx = LBound(vContratos) To UBound(vContratos)
+            Dim rngErr As Range
+            Set rngErr = wsLinks.Range(COLUNA_CELULA_LINK & ObterLinhaCelulaLink(iErrIdx))
+            If rngErr.Hyperlinks.Count = 0 Then
+                rngErr.Hyperlinks.Delete
+                If rngErr.MergeCells Then
+                    rngErr.MergeArea.Interior.Color = COR_STATUS_VERMELHO
+                    rngErr.MergeArea.Font.Color = vbWhite
+                    rngErr.MergeArea.Font.Bold = True
+                Else
+                    rngErr.Interior.Color = COR_STATUS_VERMELHO
+                    rngErr.Font.Color = vbWhite
+                    rngErr.Font.Bold = True
+                End If
+                If Len(rngErr.Value) = 0 Or InStr(rngErr.Value, "Gerando") > 0 Then
+                    rngErr.Value = "Erro ao gerar: " & CStr(vContratos(iErrIdx))
+                End If
+            End If
+        Next iErrIdx
+    End If
+    On Error GoTo 0
+    
     MsgBox "Erro inesperado durante a geração dos arquivos:" & vbNewLine & _
            Err.Number & " - " & Err.Description, vbCritical, MSG_TITULO
     Resume SairRotina
@@ -163,18 +235,18 @@ End Sub
 Private Function GerarArquivoDoContrato(ByVal wbOrigem As Workbook, ByVal sContrato As String, _
                                         ByVal sNumero As String, ByVal sSufixo As String, _
                                         ByVal vTipos As Variant, ByVal sPastaDestino As String) As String
-    Dim wbDestino       As Workbook
-    Dim wsOrigem        As Worksheet
-    Dim wsDestino       As Worksheet
-    Dim iTipo           As Long
-    Dim sTipo           As String
-    Dim sNomeAbaOrig    As String
-    Dim iCopiadas       As Long
-    Dim sFaltantes      As String
-    Dim sNomeArquivo    As String
+    Dim wbDestino        As Workbook
+    Dim wsOrigem         As Worksheet
+    Dim wsDestino        As Worksheet
+    Dim iTipo            As Long
+    Dim sTipo            As String
+    Dim sNomeAbaOrig     As String
+    Dim iCopiadas        As Long
+    Dim sFaltantes       As String
+    Dim sNomeArquivo     As String
     Dim sCaminhoCompleto As String
-    Dim sSufixoComHifen As String
-    Dim rngArea         As Range
+    Dim sSufixoComHifen  As String
+    Dim rngArea          As Range
     
     On Error GoTo TratarErroLocal
     GerarArquivoDoContrato = ""
@@ -220,6 +292,9 @@ Private Function GerarArquivoDoContrato(ByVal wbOrigem As Workbook, ByVal sContr
         Exit Function
     End If
     
+    ' Ajusta as fórmulas da aba MC para referenciar as abas locais (ARM, DADOS, etc.) e quebra vínculos externos
+    AjustarFormulasAbaMC wbDestino, wbOrigem, sContrato
+    
     AplicarPerfilPublico wbDestino
     
     If Len(sSufixo) > 0 Then
@@ -258,6 +333,25 @@ Private Sub CopiarValoresEFormatos(ByVal rngOrigem As Range, ByVal wsDestino As 
     Application.CutCopyMode = False
     
     ReplicarLargurasColunas rngOrigem, wsDestino
+    
+    ' Se a planilha de origem possuir ListObject (Tabela estruturada), recria a tabela no destino
+    On Error Resume Next
+    If rngOrigem.Worksheet.ListObjects.Count > 0 Then
+        Dim tblOrig As ListObject
+        Dim tblDest As ListObject
+        Dim rngTabelaDest As Range
+        
+        Set tblOrig = rngOrigem.Worksheet.ListObjects(1)
+        If rngOrigem.Rows.Count >= 2 Then
+            Set rngTabelaDest = wsDestino.Range("A1").Resize(rngOrigem.Rows.Count, rngOrigem.Columns.Count)
+            Set tblDest = wsDestino.ListObjects.Add(xlSrcRange, rngTabelaDest, , xlYes)
+            If Not tblDest Is Nothing Then
+                tblDest.Name = tblOrig.Name
+                tblDest.TableStyle = tblOrig.TableStyle
+            End If
+        End If
+    End If
+    On Error GoTo 0
     Exit Sub
 
 TratarErroLocal:
@@ -265,17 +359,13 @@ TratarErroLocal:
 End Sub
 
 Private Sub CopiarComFormatacaoCompleta(ByVal rngOrigem As Range, ByVal wsDestino As Worksheet)
-    Dim rngDestinoFinal As Range
     If rngOrigem Is Nothing Then Exit Sub
     On Error GoTo TratarErroLocal
     
+    ' Copia conteúdo preservando integralmente formatos e fórmulas (sem congelar em valores)
     rngOrigem.Copy
     wsDestino.Range("A1").PasteSpecial Paste:=xlPasteAll
     Application.CutCopyMode = False
-    
-    ' Congela fórmulas em valores estáticos
-    Set rngDestinoFinal = wsDestino.Range("A1").Resize(rngOrigem.Rows.Count, rngOrigem.Columns.Count)
-    rngDestinoFinal.Value = rngDestinoFinal.Value
     
     ReplicarLargurasColunas rngOrigem, wsDestino
     ReplicarAlturasLinhas rngOrigem, wsDestino
@@ -285,8 +375,112 @@ TratarErroLocal:
     Application.CutCopyMode = False
     On Error Resume Next
     rngOrigem.Copy
-    wsDestino.Range("A1").PasteSpecial Paste:=xlPasteValues
+    wsDestino.Range("A1").PasteSpecial Paste:=xlPasteAll
     Application.CutCopyMode = False
+    On Error GoTo 0
+End Sub
+
+'----------------------------------------------------------------------------------------------------
+' AJUSTE DE FÓRMULAS DA ABA MC PARA REFERENCIAR AS ABAS DO NOVO ARQUIVO
+'----------------------------------------------------------------------------------------------------
+Private Sub AjustarFormulasAbaMC(ByVal wbDestino As Workbook, ByVal wbOrigem As Workbook, ByVal sContrato As String)
+    Dim wsMC                As Worksheet
+    Dim rngFormulas         As Range
+    Dim cel                 As Range
+    Dim sFormula            As String
+    Dim sFormulaOriginal    As String
+    Dim sNomeWbOrigem       As String
+    Dim sCaminhoWbOrigem    As String
+    Dim sAbaOrigARM         As String
+    Dim sAbaOrigDADOS       As String
+    Dim sAbaOrigFRETE       As String
+    Dim sAbaOrigMC          As String
+    Dim vLinks              As Variant
+    Dim iLink               As Long
+    
+    On Error Resume Next
+    Set wsMC = wbDestino.Worksheets("MC")
+    On Error GoTo 0
+    If wsMC Is Nothing Then Exit Sub
+    
+    ' Força o cálculo antes de ajustar para garantir que todos os valores estejam computados
+    On Error Resume Next
+    wbDestino.Calculate
+    On Error GoTo 0
+    
+    sNomeWbOrigem = wbOrigem.Name
+    sCaminhoWbOrigem = wbOrigem.FullName
+    sAbaOrigARM = "ARM_" & sContrato
+    sAbaOrigDADOS = "DADOS_" & sContrato
+    sAbaOrigFRETE = "FRETE_" & sContrato
+    sAbaOrigMC = "MC_" & sContrato
+    
+    On Error Resume Next
+    Set rngFormulas = wsMC.UsedRange.SpecialCells(xlCellTypeFormulas)
+    On Error GoTo 0
+    
+    If Not rngFormulas Is Nothing Then
+        For Each cel In rngFormulas
+            sFormula = cel.Formula
+            sFormulaOriginal = sFormula
+            
+            ' 1. Remove referências com caminho completo da pasta de trabalho de origem
+            If InStr(1, sFormula, sCaminhoWbOrigem, vbTextCompare) > 0 Then
+                sFormula = Replace(sFormula, "'[" & sCaminhoWbOrigem & "]'", "")
+                sFormula = Replace(sFormula, "[" & sCaminhoWbOrigem & "]", "")
+                sFormula = Replace(sFormula, "'" & sCaminhoWbOrigem & "'!", "")
+                sFormula = Replace(sFormula, sCaminhoWbOrigem & "!", "")
+            End If
+            
+            ' 2. Remove referências pelo nome do arquivo de origem
+            If InStr(1, sFormula, sNomeWbOrigem, vbTextCompare) > 0 Then
+                sFormula = Replace(sFormula, "'[" & sNomeWbOrigem & "]'", "")
+                sFormula = Replace(sFormula, "[" & sNomeWbOrigem & "]", "")
+                sFormula = Replace(sFormula, "'" & sNomeWbOrigem & "'!", "")
+                sFormula = Replace(sFormula, sNomeWbOrigem & "!", "")
+            End If
+            
+            ' 3. Redireciona referências de abas específicas do contrato para as abas locais no novo arquivo
+            If InStr(1, sFormula, sAbaOrigARM, vbTextCompare) > 0 Then
+                sFormula = Replace(sFormula, "'" & sAbaOrigARM & "'!", "ARM!")
+                sFormula = Replace(sFormula, sAbaOrigARM & "!", "ARM!")
+            End If
+            
+            If InStr(1, sFormula, sAbaOrigDADOS, vbTextCompare) > 0 Then
+                sFormula = Replace(sFormula, "'" & sAbaOrigDADOS & "'!", "DADOS!")
+                sFormula = Replace(sFormula, sAbaOrigDADOS & "!", "DADOS!")
+            End If
+            
+            If InStr(1, sFormula, sAbaOrigFRETE, vbTextCompare) > 0 Then
+                sFormula = Replace(sFormula, "'" & sAbaOrigFRETE & "'!", "FRETE!")
+                sFormula = Replace(sFormula, sAbaOrigFRETE & "!", "FRETE!")
+            End If
+            
+            If InStr(1, sFormula, sAbaOrigMC, vbTextCompare) > 0 Then
+                sFormula = Replace(sFormula, "'" & sAbaOrigMC & "'!", "MC!")
+                sFormula = Replace(sFormula, sAbaOrigMC & "!", "MC!")
+            End If
+            
+            If sFormula <> sFormulaOriginal Then
+                On Error Resume Next
+                cel.Formula = sFormula
+                On Error GoTo 0
+            End If
+        Next cel
+    End If
+    
+    ' 4. Quebra vínculos externos remanescentes (tabelas de apoio como PPU e FDM que não existem no destino),
+    ' convertendo-os em seus valores estáticos calculados para garantir um caderno 100% independente
+    On Error Resume Next
+    vLinks = wbDestino.LinkSources(xlExcelLinks)
+    If Not IsEmpty(vLinks) Then
+        For iLink = LBound(vLinks) To UBound(vLinks)
+            wbDestino.BreakLink Name:=vLinks(iLink), Type:=xlLinkTypeExcelLinks
+        Next iLink
+    End If
+    
+    ' Recalcula a pasta destino para assegurar coerência completa de todas as fórmulas
+    wbDestino.Calculate
     On Error GoTo 0
 End Sub
 
@@ -359,8 +553,15 @@ Private Sub EscreverLinkArquivo(ByVal ws As Worksheet, ByVal iIndiceContrato As 
     
     rngCelula.Hyperlinks.Delete
     rngCelula.ClearContents
-    rngCelula.Interior.ColorIndex = xlColorIndexNone
-    rngCelula.Font.ColorIndex = xlColorIndexAutomatic
+    
+    ' Link gerado sem erros: muda para verde claro
+    If rngCelula.MergeCells Then
+        rngCelula.MergeArea.Interior.Color = COR_STATUS_VERDE_CLARO
+        rngCelula.MergeArea.Font.Bold = False
+    Else
+        rngCelula.Interior.Color = COR_STATUS_VERDE_CLARO
+        rngCelula.Font.Bold = False
+    End If
     
     ws.Hyperlinks.Add Anchor:=rngCelula, Address:=sCaminhoCompleto, TextToDisplay:=sNomeArq
     Exit Sub
@@ -368,6 +569,15 @@ Private Sub EscreverLinkArquivo(ByVal ws As Worksheet, ByVal iIndiceContrato As 
 TratarErroLocal:
     On Error Resume Next
     rngCelula.Value = sCaminhoCompleto
+    If rngCelula.MergeCells Then
+        rngCelula.MergeArea.Interior.Color = COR_STATUS_VERMELHO
+        rngCelula.MergeArea.Font.Color = vbWhite
+        rngCelula.MergeArea.Font.Bold = True
+    Else
+        rngCelula.Interior.Color = COR_STATUS_VERMELHO
+        rngCelula.Font.Color = vbWhite
+        rngCelula.Font.Bold = True
+    End If
     On Error GoTo 0
 End Sub
 
@@ -381,7 +591,17 @@ Private Sub EscreverErroLink(ByVal ws As Worksheet, ByVal iIndiceContrato As Lon
     
     rngCelula.Hyperlinks.Delete
     rngCelula.Value = "Falha ao gerar arquivo de " & sContrato
-    rngCelula.Font.Color = RGB(220, 38, 38)
+    
+    ' Caso de erro: deixa na cor vermelha
+    If rngCelula.MergeCells Then
+        rngCelula.MergeArea.Interior.Color = COR_STATUS_VERMELHO
+        rngCelula.MergeArea.Font.Color = vbWhite
+        rngCelula.MergeArea.Font.Bold = True
+    Else
+        rngCelula.Interior.Color = COR_STATUS_VERMELHO
+        rngCelula.Font.Color = vbWhite
+        rngCelula.Font.Bold = True
+    End If
     On Error GoTo 0
 End Sub
 

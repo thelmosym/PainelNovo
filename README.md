@@ -197,6 +197,7 @@ PainelNovo/
 │   ├── MANUAL_MODULO_AUDITORIA_LOG.md           # Manual operacional completo do módulo de auditoria
 │   ├── MANUAL_MONITORAMENTO_INDIVIDUAL.md       # Engenharia reversa e guia do monitoramento operacional
 │   ├── MANUAL_MONITORAMENTO_INDIVIDUAL_A4UU.md  # Detalhamento específico das rotinas da planilha A4UU
+│   ├── MANUAL_E_ARQUITETURA_DASHBOARD_BI.md     # Manual completo e arquitetura da nova Dashboard BI (00_GUIA, 01_DASHBOARD)
 │   ├── DOCUMENTACAO_PROJETO.md                  # Mapeamento técnico detalhado de todas as rotinas e funções
 │   ├── APONTAMENTOS_E_MELHORIAS.md              # Diagnóstico e catálogo de oportunidades de otimização
 │   ├── dashboard_painel_excel.html              # Painel executivo interativo em HTML responsivo
@@ -267,7 +268,7 @@ PainelNovo/
    - O intervalo de datas de corte (`26/MM/AAAA` a `25/MM/AAAA`) será atualizado automaticamente.
 3. Clique no botão **`Atualizar Consultas`** (ou execute `AtualizarTodasConsultasPowerQuery`):
    - O Power Query executará as 83 consultas M, calculando SLA, FDM, QExec e deduplicações de KM em segundo plano.
-   - O progresso poderá ser acompanhado na barra de status do Excel e na célula de controle `B12`.
+   - O progresso poderá ser acompanhado na barra de status do Excel e na célula de controle `F9`.
 
 ### Passo 3: Auditoria Preventiva da Base
 1. Clique no botão de **`Auditar Dados`** (ou execute a macro `ExecutarAuditoriaComFeedback`):
@@ -277,20 +278,20 @@ PainelNovo/
 
 ### Passo 4: Geração dos Cadernos Contratuais
 1. Com os dados auditados e validados, clique no botão **`Gerar Arquivos`** (macro `GerarArquivosPorContrato`).
-2. Os cadernos individuais em formato puro `.xlsx` serão criados na pasta `MEDIÇÃO/`.
-3. Os hiperlinks diretos para os arquivos gerados serão registrados automaticamente na aba `Painel`.
+2. Os cadernos individuais em formato puro `.xlsx` serão criados na pasta `MEDIÇÃO/` com as fórmulas dinâmicas da Memória de Cálculo (`MC`) preservadas e conectadas às bases analíticas locais.
+3. Os hiperlinks diretos para os arquivos gerados serão registrados automaticamente na aba `Painel` (células `F14:F17`, sinalizados em Amarelo durante o processamento, Verde Claro para sucesso e Vermelho para falha).
 
 ---
 
 ## 📦 Arquivos de Saída
 
-Cada arquivo exportado na pasta `MEDIÇÃO/` é um arquivo limpo `.xlsx` (desprovido de macros ou links externos de atualização), estruturado em 4 abas padronizadas:
+Cada arquivo exportado na pasta `MEDIÇÃO/` é um arquivo limpo `.xlsx` (desprovido de macros ou dependências de fontes externas), estruturado em 4 abas padronizadas:
 
 | Aba | Descrição | Conteúdo Principal |
 | :--- | :--- | :--- |
-| **`MC`** | Memória de Cálculo | Resumo financeiro consolidado por item de serviço, quantidades apuradas, preços unitários (PPU) e valor total a faturar. |
-| **`ARM`** | Armazenagem | Posição física, saldos em custódia, caixas/metros cúbicos armazenados e valores correspondentes do período. |
-| **`DADOS`** | Registros Analíticos | Base completa e auditada de atendimentos com rastreabilidade total (datas, horários, SLA, QExec, OS, localidade e status). |
+| **`MC`** | Memória de Cálculo | Resumo financeiro consolidado por item de serviço, quantidades apuradas, preços unitários (PPU) e valor total a faturar. **Preserva fórmulas dinâmicas ativas** (`SOMASE`, subtotais e totais) conectadas a `ARM` e `DADOS`, com tabelas estruturadas recriadas e tabelas de apoio convertidas via `BreakLink`. |
+| **`ARM`** | Armazenagem | Posição física, saldos em custódia, caixas/metros cúbicos armazenados e valores correspondentes do período (dados analíticos e tabela estruturada recriada). |
+| **`DADOS`** | Registros Analíticos | Base completa e auditada de atendimentos com rastreabilidade total: datas, horários, SLA, QExec, OS, localidade e status (dados analíticos e tabela estruturada recriada). |
 | **`FRETE`** | Transporte e Deslocamentos | Detalhamento de viagens, coletas, rotas normais/expressas, quilometragem apurada e valores apurados sem duplicidade. |
 
 ---
@@ -301,6 +302,8 @@ A tabela abaixo sintetiza o ciclo recente de modernização e correções aplica
 
 | Componente | Tipo de Modificação | Descrição Detalhada |
 | :--- | :---: | :--- |
+| **VBA (`modGerarArquivos.bas`)** | **Preservação de Fórmulas & Desconexão de Links** | Refatoração completa da rotina de exportação dos cadernos contratuais (`GerarArquivosPorContrato`): a aba `MC` agora preserva fórmulas dinâmicas nativas do Excel (`SOMASE`, subtotais, multiplicadores e totais gerais) conectadas às abas `ARM` e `DADOS` locais. Implementou recriação de tabelas estruturadas (`ListObjects`) com os nomes originais (`ARM_<CONTRATO>`, `DADOS_<CONTRATO>`), redirecionamento automático de referências de planilhas e eliminação de links externos residuais (`PPU`, `TabelaFDMPorContrato`) via `BreakLink`, assegurando abertura 100% limpa (sem avisos de vínculos corrompidos) e auditabilidade matemática transparente para a fiscalização da Petrobras. |
+| **Dashboard Executiva BI (Excel)** | **Nova Arquitetura & UX/UI** | Criação da suíte executiva desacoplada em 4 camadas (`00_GUIA`, `01_DASHBOARD`, `04_CALCULOS`, `06_LISTAS`), contendo 6 KPI cards (OS, Qtd Solicitada, Qtd Atendida, QExec, KM Adicional, SLA), tabela consolidada por contrato com totalizador, 3 gráficos nativos interativos (Colunas Agrupadas, Donut de SLA, Ranking Top Atividades), segmentação dinâmica de filtros (`Contrato`, `Atividade`, `SLA`), botão com macro `AtualizarDashboard` e documentação integrada. Tratamento especial de células vazias na coluna SLA para cômputo integral dos 582 registros. |
 | **Power Query M (`fnCalcularQExecAgrupado.m`)** | Correção de Regra de Negócio | Inclusão de `Linha de serviço PPU` na chave de agrupamento, separando Frete Normal (`FRE-NRM`) de Frete Expresso (`FRE-EXP`). Corrige a supressão de viagens expressas coincidentes em data e rota (restaurando as 2 viagens em `IRON-LT1-RJ`). Sincronizado em `Painel T2M.m`, `Painel otimizado.m` e diretamente no workbook `Painel de controle MemoriaPetrobras V6.xlsm`. |
 | **VBA (`modAuditoriaFontesPQ.bas`)** | Nova Funcionalidade | Criação do scanner completo de fontes externas Power Query (`AuditarFontesPowerQuery`), diagnosticando arquivos locais, pastas, conexões OLEDB/ODBC e gerando relatório técnico na aba `AUDITORIA_FONTES_PQ`. |
 | **Integridade de Conexões Excel** | Diagnóstico & Resolução | Identificação da causa raiz de desatualização na aba `DADOS_IRON-LT1-RJ`: tabela vinculada a conexão interna órfã/deletada (`connectionId=18`), corrigida para a conexão ativa. |
@@ -317,6 +320,7 @@ A tabela abaixo sintetiza o ciclo recente de modernização e correções aplica
 
 Para aprofundamento técnico em qualquer componente do ecossistema, consulte os guias dedicados na pasta [`Docs/`](Docs/):
 
+- 📊 [**Manual e Arquitetura da Dashboard Executiva BI**](Docs/MANUAL_E_ARQUITETURA_DASHBOARD_BI.md): Guia de operação, catálogo de fórmulas, design system e arquitetura em 4 camadas no Excel.
 - 📖 [**Análise Completa e Sugestões de Melhoria**](Docs/ANALISE_COMPLETA_E_SUGESTOES_DE_MELHORIA.md): Diagnóstico arquitetural, linha do tempo detalhada e plano de evolução da solução.
 - 🛡️ [**Manual do Módulo de Auditoria (`modAuditoriaLog.bas`)**](Docs/MANUAL_MODULO_AUDITORIA_LOG.md): Guia passo a passo de como funciona a inspeção em memória, parâmetros e aba `LOG_CRITICAS`.
 - 🔍 [**Manual do Monitoramento Individual (A4UU)**](Docs/MANUAL_MONITORAMENTO_INDIVIDUAL.md): Análise técnica detalhada das macros operacionais de coleta da ponta.

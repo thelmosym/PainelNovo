@@ -1,11 +1,13 @@
-Attribute VB_Name = "modDashboard"
+import os
+
+vba_code = '''Attribute VB_Name = "modDashboard"
 Option Explicit
 
 '====================================================================================================
-' M”DULO: modDashboard
-' OBJETIVO: Gerenciar a Dashboard Executiva BI (01_DASHBOARD), motor de c·lculo (04_CALCULOS),
-'           listas de validaÁ„o (06_LISTAS) e documentaÁ„o operacional (00_GUIA).
-' REGRAS DE NEG”CIO: Petrobras Contratos PA-LT2 e IRON-LT1 (RJ, SP, ES). Ciclo 26 a 25.
+' M√ìDULO: modDashboard
+' OBJETIVO: Gerenciar a Dashboard Executiva BI (01_DASHBOARD), motor de c√°lculo (04_CALCULOS),
+'           listas de valida√ß√£o (06_LISTAS) e documenta√ß√£o operacional (00_GUIA).
+' REGRAS DE NEG√ìCIO: Petrobras Contratos PA-LT2 e IRON-LT1 (RJ, SP, ES). Ciclo 26 a 25.
 '====================================================================================================
 
 Public Sub AtualizarDashboard()
@@ -31,7 +33,7 @@ Public Sub AtualizarDashboard()
     ThisWorkbook.RefreshAll
     On Error GoTo TratarErro
 
-    ' 2. ForÁar rec·lculo completo da pasta de trabalho
+    ' 2. For√ßar rec√°lculo completo da pasta de trabalho
     Application.CalculateFull
 
     Application.Calculation = xlCalculationAutomatic
@@ -46,14 +48,14 @@ Public Sub AtualizarDashboard()
     Application.ScreenUpdating = bScreen
     Application.EnableEvents = bEvents
 
-    MsgBox "Dashboard e motor analÌtico atualizados com sucesso!", vbInformation, "BI Petrobras"
+    MsgBox "Dashboard e motor anal√≠tico atualizados com sucesso!", vbInformation, "BI Petrobras"
     Exit Sub
 
 TratarErro:
     Application.Calculation = appCalc
     Application.EnableEvents = bEvents
     Application.ScreenUpdating = bScreen
-    MsgBox "Erro ao atualizar Dashboard:" & vbCrLf & Err.Number & " - " & Err.Description, vbCritical, "Erro de AtualizaÁ„o"
+    MsgBox "Erro ao atualizar Dashboard:" & vbCrLf & Err.Number & " - " & Err.Description, vbCritical, "Erro de Atualiza√ß√£o"
 End Sub
 
 Public Sub ResetarFiltrosDashboard()
@@ -73,3 +75,10 @@ Private Function ObterPlanilha(ByVal nomeAba As String) As Worksheet
     Set ObterPlanilha = ThisWorkbook.Worksheets(nomeAba)
     On Error GoTo 0
 End Function
+'''
+
+target_path = r"Codes/VBA/Fun√ß√µes Novas/modDashboard.bas"
+with open(target_path, "wb") as f:
+    f.write(vba_code.replace("\r\n", "\n").replace("\n", "\r\n").encode("latin1"))
+
+print(f"Arquivo {target_path} gravado com sucesso com codifica√ß√£o Windows-1252 (ANSI) e quebras CRLF.")
