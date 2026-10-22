@@ -29,7 +29,7 @@
 
 O processo de medição de serviços operacionais corporativos da Petrobras exige a conciliação mensal de milhares de ordens de serviço (OS) e chamados distribuídos entre múltiplos polos de atendimento (BA, RJ, SP, ES) e prestadoras contratadas.
 
-O **Painel de Controle MemoriaPetrobras V6** unifica e automatiza essa esteira operacional de ponta a ponta:
+O **Painel de Controle MemoriaPetrobras V9** unifica e automatiza essa esteira operacional de ponta a ponta:
 
 1. **Ingestão Descentralizada:** Lê dinamicamente os cadernos de monitoramento operacional das unidades (`Monitoramento/*.xlsm`).
 2. **Transformação & Enriquecimento (ETL em Power Query M):** Padroniza dados textuais, cruza tabelas de referência técnica (`Tabela B`, `PPU`, `Centros`, `Galpões`, `Origem/Destino`, `Feriados`) e filtra apenas registros elegíveis do ciclo.
@@ -74,7 +74,7 @@ flowchart TD
         PQ_CALC["Cálculos de SLA, FDM e Faturamento<br/>• fnCalcularDataSLA.m (c/ Feriados)<br/>• fnClassificarFDM.m & fnRecalcularFDM.m<br/>• fnCalcularQExec.m & fnCalcularQExecAgrupado.m<br/>• Painel T2M.m & DADOS.m"]
     end
 
-    subgraph WORKBOOK["📑 3. Workbook Principal (Painel V6.xlsm)"]
+    subgraph WORKBOOK["📑 3. Workbook Principal (Painel V9.xlsm)"]
         ABA_PAINEL["Aba 'Painel'<br/>(Controle, Parâmetros e Status)"]
         ABAS_DADOS["Abas Consolidadas do Mês<br/>(DADOS, ARM, FRETE, MC)"]
         ABA_LOG["Aba 'LOG_CRITICAS'<br/>(Relatório de inconsistências e auditoria)"]
@@ -188,7 +188,7 @@ Para detalhes completos de uso e regras, consulte o [Manual do Módulo de Audito
 ```text
 PainelNovo/
 │
-├── Painel de controle MemoriaPetrobras V6.xlsm   # Workbook principal com macros e conexões
+├── Painel de controle MemoriaPetrobras V9.xlsm   # Workbook principal com macros e conexões (Versão Oficial V9)
 ├── Processamento Medicoes logs.xlsx             # Histórico de processamentos e execuções
 ├── README.md                                    # Visão geral, regras de negócio e guia rápido
 │
@@ -262,7 +262,7 @@ PainelNovo/
 2. Verifique se as tabelas de referência técnica em [`TabelaB-V2.xlsx`](Tabelas%20Especificas/TabelaB-V2.xlsx) e [`Feriados_2026_2030.csv`](Tabelas%20Especificas/Feriados_2026_2030.csv) contêm os dados e calendários do período.
 
 ### Passo 2: Atualização do Motor de Cálculo
-1. Abra o arquivo **`Painel de controle MemoriaPetrobras V6.xlsm`** com as macros habilitadas.
+1. Abra o arquivo **`Painel de controle MemoriaPetrobras V9.xlsm`** com as macros habilitadas.
 2. Na aba **`Painel`**:
    - Defina o **Mês** e o **Ano** de referência da medição.
    - O intervalo de datas de corte (`26/MM/AAAA` a `25/MM/AAAA`) será atualizado automaticamente.
@@ -302,6 +302,7 @@ A tabela abaixo sintetiza o ciclo recente de modernização e correções aplica
 
 | Componente | Tipo de Modificação | Descrição Detalhada |
 | :--- | :---: | :--- |
+| **Auditoria & Rastreabilidade V9 (`modAuditoriaLog.bas`)** | **Nova Coluna & Rastreabilidade de Origem** | Adição da coluna **Planilha Origem** no relatório executivo `LOG_CRITICAS` e preservação da coluna `Nome da Origem` no Power Query (`Painel T2M.m` / `DADOS.m`). O módulo agora identifica e exibe com precisão a planilha individual de monitoramento da equipe (ex.: `Monitoramento individual_S2IJ_v4.xlsm`, `DPBR`, `GPZ1`, `GQ6S`, `A4UU`) que originou cada apontamento de inconsistência. Versão oficial promovida para **V9** (`Painel de controle MemoriaPetrobras V9.xlsm`). |
 | **VBA (`modGerarArquivos.bas`)** | **Preservação de Fórmulas & Desconexão de Links** | Refatoração completa da rotina de exportação dos cadernos contratuais (`GerarArquivosPorContrato`): a aba `MC` agora preserva fórmulas dinâmicas nativas do Excel (`SOMASE`, subtotais, multiplicadores e totais gerais) conectadas às abas `ARM` e `DADOS` locais. Implementou recriação de tabelas estruturadas (`ListObjects`) com os nomes originais (`ARM_<CONTRATO>`, `DADOS_<CONTRATO>`), redirecionamento automático de referências de planilhas e eliminação de links externos residuais (`PPU`, `TabelaFDMPorContrato`) via `BreakLink`, assegurando abertura 100% limpa (sem avisos de vínculos corrompidos) e auditabilidade matemática transparente para a fiscalização da Petrobras. |
 | **Dashboard Executiva BI (Excel)** | **Nova Arquitetura & UX/UI** | Criação da suíte executiva desacoplada em 4 camadas (`00_GUIA`, `01_DASHBOARD`, `04_CALCULOS`, `06_LISTAS`), contendo 6 KPI cards (OS, Qtd Solicitada, Qtd Atendida, QExec, KM Adicional, SLA), tabela consolidada por contrato com totalizador, 3 gráficos nativos interativos (Colunas Agrupadas, Donut de SLA, Ranking Top Atividades), segmentação dinâmica de filtros (`Contrato`, `Atividade`, `SLA`), botão com macro `AtualizarDashboard` e documentação integrada. Tratamento especial de células vazias na coluna SLA para cômputo integral dos 582 registros. |
 | **Power Query M (`fnCalcularQExecAgrupado.m`)** | Correção de Regra de Negócio | Inclusão de `Linha de serviço PPU` na chave de agrupamento, separando Frete Normal (`FRE-NRM`) de Frete Expresso (`FRE-EXP`). Corrige a supressão de viagens expressas coincidentes em data e rota (restaurando as 2 viagens em `IRON-LT1-RJ`). Sincronizado em `Painel T2M.m`, `Painel otimizado.m` e diretamente no workbook `Painel de controle MemoriaPetrobras V6.xlsm`. |

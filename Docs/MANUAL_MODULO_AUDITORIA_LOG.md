@@ -130,19 +130,20 @@ Quando o usuário executa a auditoria, o sistema produz saídas coordenadas em 4
 ### A. Criação da Aba `LOG_CRITICAS` (Relatório Executivo)
 Se não existir, a aba é criada automaticamente; se já existir, ela é limpa e atualizada:
 1. **Cabeçalho Executivo:** Título padronizado nas cores corporativas (Azul Petróleo Escuro), com data, hora e nome da base auditada.
-2. **Tabela Estruturada de Inconsistências:** Contém 9 colunas detalhadas:
+2. **Tabela Estruturada de Inconsistências:** Contém 10 colunas detalhadas com rastreabilidade total de origem:
    - `Linha Base`: Número exato da linha na aba de dados (para ir direto ao problema).
-   - `Contrato`: Número do contrato.
-   - `Codigo OS`: Número da OS.
-   - `Cod. Solicitacao`: Código da solicitação.
-   - `Atividade`: Descrição do serviço.
-   - `Item`: Item correspondente.
-   - `Severidade`: `CRITICO` ou `ALERTA`.
-   - `Regra / Campo`: Categoria da validação disparada.
-   - `Descricao Detalhada da Inconsistencia`: Explicação textual do erro.
-3. **Estilização Visual:**
-   - Destaque em **Vermelho Suave** para itens Críticos.
-   - Destaque em **Amarelo Âmbar** para Alertas.
+   - `Planilha Origem`: Nome do arquivo individual de monitoramento de onde a linha foi importada (ex.: `Monitoramento individual_A4UU_v4.xlsm`, `Monitoramento individual_DPBR_v4.xlsm`, etc.), permitindo acionar diretamente o operador/atendente responsável.
+   - `Contrato`: Número/código do contrato (ex.: `IRON-LT1-RJ`, `PA-LT2`).
+   - `Codigo OS`: Número da Ordem de Serviço.
+   - `Cod. Solicitacao`: Código da solicitação de serviço.
+   - `Atividade`: Descrição do serviço executado.
+   - `Item`: Item correspondente da tabela de preços/PPU.
+   - `Severidade`: Classificação (`CRITICO` ou `ALERTA`).
+   - `Regra / Campo`: Categoria da validação violada.
+   - `Descricao Detalhada da Inconsistencia`: Explicação textual clara e acionável do erro.
+3. **Estilização Visual Corporativa:**
+   - Destaque em **Vermelho Suave** para itens Críticos (Coluna H).
+   - Destaque em **Amarelo Âmbar** para Alertas (Coluna H).
    - Linhas com efeito zebra para facilitar a leitura.
    - Filtros automáticos ativos (`AutoFilter`).
    - Painéis congelados no cabeçalho para navegação confortável.

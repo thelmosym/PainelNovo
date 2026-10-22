@@ -8,7 +8,10 @@ Option Explicit
 '           estrutura da pasta de trabalho (tabelas estruturadas, Power Query e abas contratuais).
 '
 ' PRINCIPAIS CARACTERISTICAS:
-'   1. Mapeamento Dinamico de Colunas: Nao depende de colunas fixas (Cells(i, 3), etc.). Localiza
+'   1. Rastreabilidade Total da Planilha de Origem: Identifica de qual planilha individual de
+'      monitoramento (ex: Monitoramento individual_A4UU_v4.xlsm, DPBR, GPZ1, etc.) cada atendimento
+'      se originou, incluindo essa informacao diretamente no relatorio executivo 'LOG_CRITICAS'.
+'   2. Mapeamento Dinamico de Colunas: Nao depende de colunas fixas (Cells(i, 3), etc.). Localiza
 '      automaticamente os campos pelos cabecalhos, tolerando variacoes de nomenclatura.
 '   2. Processamento 100% em Memoria: Carrega os dados em matrizes (Variant Array) para maxima
 '      velocidade (processa milhares de registros em milissegundos).
@@ -47,9 +50,13 @@ Private Const COR_ALERTA_TEXTO       As Long = 933906      ' RGB(146, 64, 14)  -
 Private Const COR_BORDA              As Long = 14737632    ' RGB(224, 224, 224)- Cinza Claro
 Private Const COR_ZEBRA              As Long = 16382457    ' RGB(249, 250, 251)- Cinza Quase Branco
 
+'-- Cache de mapeamento de arquivos em memoria (evita reaberturas repetidas)
+Private m_dictMonitoramento As Object
+
 '-- Estrutura em memoria para acumulacao de ocorrencias
 Private Type RegistroInconsistencia
     LinhaOrigem       As Long
+    PlanilhaOrigem    As String      ' Planilha individual de onde o atendimento foi importado
     Contrato          As String
     CodigoOS          As String
     CodigoSolicitacao As String
@@ -85,6 +92,17 @@ End Sub
 ''' <summary>
 ''' Permite auditar a planilha que estiver ativa no momento (ex: DADOS_PA-LT2, DADOS_IRON-LT1-RJ, etc.).
 ''' </summary>
+''' <summary>
+''' Executa a auditoria sem exibir caixas de dialogo modais (ideal para testes ou execucoes em lote).
+''' </summary>
+Public Sub AuditarDadosSilencioso()
+    Dim wsDados As Worksheet
+    Set wsDados = ObterAbaPrioritaria(ThisWorkbook, Array("DADOS", "Painel_T2M", "DADOS_IRON-LT1"))
+    If Not wsDados Is Nothing Then
+        ExecutarMotorAuditoria wsDados, False
+    End If
+End Sub
+
 Public Sub AuditarAbaAtiva()
     Dim wsAtiva As Worksheet
     Set wsAtiva = ActiveSheet
@@ -139,6 +157,7 @@ Private Sub ExecutarMotorAuditoria(ByVal wsOrigem As Worksheet, ByVal bInterativ
     Dim linhaReal   As Long
     
     '-- Mapeamento dinamico de colunas
+    Dim cPlanilhaOrigem As Long
     Dim cContrato   As Long, cAtividade  As Long, cItem        As Long
     Dim cAplicacao  As Long, cCodSolic   As Long, cChaveSol    As Long
     Dim cGerencia   As Long, cDataSolic  As Long, cQtdSol      As Long
@@ -154,6 +173,7 @@ Private Sub ExecutarMotorAuditoria(ByVal wsOrigem As Worksheet, ByVal bInterativ
     Dim totalAlertas As Long
     
     '-- Variaveis temporarias de cada linha
+    Dim vValPlanilha As String
     Dim vValContrato As String, vValAtiv   As String, vValItem As String
     Dim vValOS       As String, vValSolic  As String, vValChave As String
     Dim vValGer      As String
@@ -203,6 +223,7 @@ Private Sub ExecutarMotorAuditoria(ByVal wsOrigem As Worksheet, ByVal bInterativ
     numColunas = UBound(vDados, 2)
     
     '-- Localizacao dinamica das colunas pelos nomes possiveis
+    cPlanilhaOrigem = LocalizarIndiceColuna(vHeaders, "Planilha Origem", "Nome da Origem", "Arquivo Origem", "Planilha Monitoramento", "Arquivo Monitoramento", "Doc Monitoramento")
     cContrato   = LocalizarIndiceColuna(vHeaders, "Contrato", "Contrato.1", "Empresa")
     cAtividade  = LocalizarIndiceColuna(vHeaders, "Descricao da atividade", "Descricao da atividade", "Atividade")
     cItem       = LocalizarIndiceColuna(vHeaders, "Item", "Item PPU")
@@ -223,6 +244,13 @@ Private Sub ExecutarMotorAuditoria(ByVal wsOrigem As Worksheet, ByVal bInterativ
     cStatusPraz = LocalizarIndiceColuna(vHeaders, "Status Prazo", "Status_x000a_Prazo")
     cLogSLA     = LocalizarIndiceColuna(vHeaders, "LOG SLA", "LOG", "Log")
     cColLogDest = LocalizarIndiceColuna(vHeaders, NOME_COLUNA_LOG_DADOS)
+    
+    '-- Prepara mapa de fallback para arquivos de monitoramento se a coluna nao existir
+    If cPlanilhaOrigem = 0 Then
+        If m_dictMonitoramento Is Nothing Then
+            Set m_dictMonitoramento = ObterMapaArquivosMonitoramento()
+        End If
+    End If
     
     '-- Prepara matriz de log na propria tabela, se houver coluna destino
     bTemColunaLog = (cColLogDest > 0)
@@ -250,6 +278,20 @@ Private Sub ExecutarMotorAuditoria(ByVal wsOrigem As Worksheet, ByVal bInterativ
         vValChave    = ObterTextoSeguro(vDados, iLinha, cChaveSol)
         vValGer      = ObterTextoSeguro(vDados, iLinha, cGerencia)
         
+        '-- Rastreabilidade da Planilha Individual de Monitoramento
+        vValPlanilha = ""
+        If cPlanilhaOrigem > 0 Then
+            vValPlanilha = ObterTextoSeguro(vDados, iLinha, cPlanilhaOrigem)
+        End If
+        If Len(vValPlanilha) = 0 Then
+            If Not m_dictMonitoramento Is Nothing Then
+                vValPlanilha = BuscarArquivoOrigem(m_dictMonitoramento, vValSolic, vValOS)
+            End If
+        End If
+        If Len(vValPlanilha) = 0 Then
+            vValPlanilha = "Monitoramento Individual (N/D)"
+        End If
+        
         dtAber       = ObterValorSeguro(vDados, iLinha, cDataAber)
         dtFech       = ObterValorSeguro(vDados, iLinha, cDataFech)
         dtSolic      = ObterValorSeguro(vDados, iLinha, cDataSolic)
@@ -260,35 +302,35 @@ Private Sub ExecutarMotorAuditoria(ByVal wsOrigem As Worksheet, ByVal bInterativ
         '-- 1. VALIDACAO DE CAMPOS OBRIGATORIOS VAZIOS (Severidade: CRITICO)
         If Len(vValContrato) = 0 Then
             RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                          linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                          linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                           "CRITICO", "Campo Obrigatorio", "Contrato nao informado ou vazio"
             sLogLinha = ConcatenarLog(sLogLinha, "Contrato vazio")
         End If
         
         If Len(vValAtiv) = 0 Then
             RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                          linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                          linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                           "CRITICO", "Campo Obrigatorio", "Descricao da atividade nao informada"
             sLogLinha = ConcatenarLog(sLogLinha, "Atividade vazia")
         End If
         
         If Len(vValItem) = 0 Then
             RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                          linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                          linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                           "CRITICO", "Campo Obrigatorio", "Item nao informado ou vazio"
             sLogLinha = ConcatenarLog(sLogLinha, "Item vazio")
         End If
         
         If Len(vValSolic) = 0 Then
             RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                          linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                          linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                           "CRITICO", "Campo Obrigatorio", "Codigo da solicitacao nao informado"
             sLogLinha = ConcatenarLog(sLogLinha, "Solicitacao vazia")
         End If
         
         If Len(vValOS) = 0 Then
             RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                          linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                          linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                           "ALERTA", "Identificacao OS", "Codigo OS nao informado para atendimento concluido"
             sLogLinha = ConcatenarLog(sLogLinha, "OS nao preenchida")
         End If
@@ -297,7 +339,7 @@ Private Sub ExecutarMotorAuditoria(ByVal wsOrigem As Worksheet, ByVal bInterativ
         If cChaveSol > 0 And Len(vValChave) > 0 Then
             If Len(vValChave) <> 4 Then
                 RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                              linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                              linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                               "ALERTA", "Chave Solicitante", "Chave com tamanho divergente do padrao (esperado 4 caracteres): '" & vValChave & "'"
                 sLogLinha = ConcatenarLog(sLogLinha, "Chave solicitante fora do padrao de 4 digitos")
             End If
@@ -307,7 +349,7 @@ Private Sub ExecutarMotorAuditoria(ByVal wsOrigem As Worksheet, ByVal bInterativ
         If cGerencia > 0 And Len(vValGer) > 0 Then
             If InStr(vValGer, "_") > 0 Or InStr(vValGer, "\") > 0 Then
                 RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                              linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                              linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                               "ALERTA", "Gerencia Solicitante", "Caractere invalido detectado na gerencia: '" & vValGer & "'"
                 sLogLinha = ConcatenarLog(sLogLinha, "Gerencia com caractere especial invalido")
             End If
@@ -316,24 +358,24 @@ Private Sub ExecutarMotorAuditoria(ByVal wsOrigem As Worksheet, ByVal bInterativ
         '-- 4. VALIDACAO DE DATAS E CRONOLOGIA (Severidade: CRITICO)
         If IsEmpty(dtAber) Or Len(Trim$(CStr(dtAber))) = 0 Then
             RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                          linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                          linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                           "CRITICO", "Datas de Atendimento", "Data de abertura nao preenchida"
             sLogLinha = ConcatenarLog(sLogLinha, "D. abertura vazia")
         ElseIf Not IsDate(dtAber) Then
             RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                          linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                          linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                           "CRITICO", "Datas de Atendimento", "Data de abertura em formato invalido: '" & CStr(dtAber) & "'"
             sLogLinha = ConcatenarLog(sLogLinha, "D. abertura invalida")
         End If
         
         If IsEmpty(dtFech) Or Len(Trim$(CStr(dtFech))) = 0 Then
             RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                          linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                          linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                           "CRITICO", "Datas de Atendimento", "Data de fechamento nao preenchida em registro concluido"
             sLogLinha = ConcatenarLog(sLogLinha, "D. fechamento vazia")
         ElseIf Not IsDate(dtFech) Then
             RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                          linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                          linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                           "CRITICO", "Datas de Atendimento", "Data de fechamento em formato invalido: '" & CStr(dtFech) & "'"
             sLogLinha = ConcatenarLog(sLogLinha, "D. fechamento invalida")
         End If
@@ -342,7 +384,7 @@ Private Sub ExecutarMotorAuditoria(ByVal wsOrigem As Worksheet, ByVal bInterativ
         If IsDate(dtAber) And IsDate(dtFech) Then
             If CDate(dtFech) < CDate(dtAber) Then
                 RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                              linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                              linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                               "CRITICO", "Cronologia de Datas", "Data de fechamento (" & Format(CDate(dtFech), "dd/mm/yyyy hh:mm") & _
                               ") e ANTERIOR a data de abertura (" & Format(CDate(dtAber), "dd/mm/yyyy hh:mm") & ")"
                 sLogLinha = ConcatenarLog(sLogLinha, "Fechamento anterior a abertura")
@@ -352,34 +394,34 @@ Private Sub ExecutarMotorAuditoria(ByVal wsOrigem As Worksheet, ByVal bInterativ
         '-- 5. VALIDACAO DE QUANTIDADES (Severidade: CRITICO e ALERTA)
         If IsEmpty(qSol) Or Len(Trim$(CStr(qSol))) = 0 Then
             RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                          linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                          linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                           "CRITICO", "Quantidades", "Quantidade solicitada vazia"
             sLogLinha = ConcatenarLog(sLogLinha, "Qtd. solicitada vazia")
         ElseIf Not IsNumeric(qSol) Then
             RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                          linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                          linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                           "CRITICO", "Quantidades", "Quantidade solicitada nao e numerica: '" & CStr(qSol) & "'"
             sLogLinha = ConcatenarLog(sLogLinha, "Qtd. solicitada nao numerica")
         ElseIf CDbl(qSol) <= 0 Then
             RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                          linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                          linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                           "CRITICO", "Quantidades", "Quantidade solicitada deve ser maior que zero (valor: " & CStr(qSol) & ")"
             sLogLinha = ConcatenarLog(sLogLinha, "Qtd. solicitada <= 0")
         End If
         
         If IsEmpty(qAtend) Or Len(Trim$(CStr(qAtend))) = 0 Then
             RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                          linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                          linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                           "CRITICO", "Quantidades", "Quantidade atendida nao preenchida"
             sLogLinha = ConcatenarLog(sLogLinha, "Qtd. atendida vazia")
         ElseIf Not IsNumeric(qAtend) Then
             RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                          linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                          linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                           "CRITICO", "Quantidades", "Quantidade atendida nao e numerica: '" & CStr(qAtend) & "'"
             sLogLinha = ConcatenarLog(sLogLinha, "Qtd. atendida nao numerica")
         ElseIf CDbl(qAtend) < 0 Then
             RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                          linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                          linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                           "CRITICO", "Quantidades", "Quantidade atendida negativa: " & CStr(qAtend)
             sLogLinha = ConcatenarLog(sLogLinha, "Qtd. atendida negativa")
         End If
@@ -388,7 +430,7 @@ Private Sub ExecutarMotorAuditoria(ByVal wsOrigem As Worksheet, ByVal bInterativ
         If IsNumeric(qSol) And IsNumeric(qAtend) Then
             If CDbl(qAtend) > CDbl(qSol) Then
                 RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                              linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                              linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                               "ALERTA", "Divergencia de Qtd", "Qtd atendida (" & CStr(qAtend) & ") e superior a solicitada (" & CStr(qSol) & ")"
                 sLogLinha = ConcatenarLog(sLogLinha, "Qtd atendida > solicitada")
             End If
@@ -400,7 +442,7 @@ Private Sub ExecutarMotorAuditoria(ByVal wsOrigem As Worksheet, ByVal bInterativ
             sLogM = ObterTextoSeguro(vDados, iLinha, cLogSLA)
             If Len(sLogM) > 0 Then
                 RegistrarErro listaErros, totalErros, totalCriticos, totalAlertas, _
-                              linhaReal + iLinha - 1, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
+                              linhaReal + iLinha - 1, vValPlanilha, vValContrato, vValOS, vValSolic, vValAtiv, vValItem, _
                               "ALERTA", "Log do Motor Power Query", "Pendencia registrada na consulta M: '" & sLogM & "'"
                 sLogLinha = ConcatenarLog(sLogLinha, "PQ: " & sLogM)
             End If
@@ -452,7 +494,7 @@ SairRotina:
                           "- Erros CRITICOS: " & totalCriticos & vbCrLf & _
                           "- ALERTAS / Avisos: " & totalAlertas & vbCrLf & _
                           "- Total de pendencias: " & totalErros & vbCrLf & vbCrLf & _
-                          "Deseja navegar para a aba '" & NOME_ABA_LOG_CRITICAS & "' para conferir os detalhes?", _
+                          "Deseja navegar para a aba '" & NOME_ABA_LOG_CRITICAS & "' para conferir os detalhes e a planilha de origem de cada erro?", _
                           vbYesNo + vbExclamation, "Inconsistencias Encontradas")
             If resp = vbYes Then
                 On Error Resume Next
@@ -494,8 +536,8 @@ Private Sub GerarRelatorioAbaLog(ByRef lista() As RegistroInconsistencia, ByVal 
     wsLog.Cells.Clear
     wsLog.Tab.Color = IIf(total > 0, COR_CRITICO_TEXTO, 5296274)
     
-    '-- Cabecalho Superior Executivo
-    With wsLog.Range("A1:I1")
+    '-- Cabecalho Superior Executivo (Expandido para 10 colunas A:J)
+    With wsLog.Range("A1:J1")
         .Merge
         .Value = "RELATORIO DE AUDITORIA E LOG DE CRITICAS - MEDICAO PETROBRAS"
         .Font.Name = "Segoe UI"
@@ -509,7 +551,7 @@ Private Sub GerarRelatorioAbaLog(ByRef lista() As RegistroInconsistencia, ByVal 
     End With
     
     wsLog.Range("A2").Value = "Base Auditada: " & sNomeBase & " | Data/Hora da Execucao: " & Format(Now, "dd/mm/yyyy hh:mm:ss")
-    With wsLog.Range("A2:I2")
+    With wsLog.Range("A2:J2")
         .Font.Name = "Segoe UI"
         .Font.Size = 9
         .Font.Italic = True
@@ -517,16 +559,16 @@ Private Sub GerarRelatorioAbaLog(ByRef lista() As RegistroInconsistencia, ByVal 
         .RowHeight = 20
     End With
     
-    '-- Cabecalhos da Tabela de Inconsistencias
+    '-- Cabecalhos da Tabela de Inconsistencias (10 Colunas com Planilha Origem na Coluna B)
     Dim cabecalhos As Variant
-    cabecalhos = Array("Linha Base", "Contrato", "Codigo OS", "Cod. Solicitacao", _
+    cabecalhos = Array("Linha Base", "Planilha Origem", "Contrato", "Codigo OS", "Cod. Solicitacao", _
                        "Atividade", "Item", "Severidade", "Regra / Campo", "Descricao Detalhada da Inconsistencia")
     
     For i = 0 To UBound(cabecalhos)
         wsLog.Cells(4, i + 1).Value = cabecalhos(i)
     Next i
     
-    With wsLog.Range("A4:I4")
+    With wsLog.Range("A4:J4")
         .Font.Name = "Segoe UI"
         .Font.Size = 10
         .Font.Bold = True
@@ -539,29 +581,31 @@ Private Sub GerarRelatorioAbaLog(ByRef lista() As RegistroInconsistencia, ByVal 
     
     If total = 0 Then
         wsLog.Cells(5, 1).Value = "-"
-        wsLog.Cells(5, 7).Value = "OK"
-        wsLog.Cells(5, 9).Value = "Parabens! Nenhuma inconsistencia encontrada nesta base."
-        wsLog.Range("A5:I5").Interior.Color = RGB(240, 253, 244)
-        wsLog.Range("A5:I5").Font.Color = RGB(22, 101, 52)
-        wsLog.Columns("A:I").AutoFit
+        wsLog.Cells(5, 2).Value = "-"
+        wsLog.Cells(5, 8).Value = "OK"
+        wsLog.Cells(5, 10).Value = "Parabens! Nenhuma inconsistencia encontrada nesta base."
+        wsLog.Range("A5:J5").Interior.Color = RGB(240, 253, 244)
+        wsLog.Range("A5:J5").Font.Color = RGB(22, 101, 52)
+        wsLog.Columns("A:J").AutoFit
         Exit Sub
     End If
     
-    '-- Prepara dados em matriz para despejo instantaneo
-    ReDim vMatrizLog(1 To total, 1 To 9)
+    '-- Prepara dados em matriz para despejo instantaneo (10 Colunas)
+    ReDim vMatrizLog(1 To total, 1 To 10)
     For i = 1 To total
         vMatrizLog(i, 1) = lista(i).LinhaOrigem
-        vMatrizLog(i, 2) = lista(i).Contrato
-        vMatrizLog(i, 3) = lista(i).CodigoOS
-        vMatrizLog(i, 4) = lista(i).CodigoSolicitacao
-        vMatrizLog(i, 5) = lista(i).Atividade
-        vMatrizLog(i, 6) = lista(i).Item
-        vMatrizLog(i, 7) = lista(i).Severidade
-        vMatrizLog(i, 8) = lista(i).RegraCampo
-        vMatrizLog(i, 9) = lista(i).DescricaoErro
+        vMatrizLog(i, 2) = lista(i).PlanilhaOrigem
+        vMatrizLog(i, 3) = lista(i).Contrato
+        vMatrizLog(i, 4) = lista(i).CodigoOS
+        vMatrizLog(i, 5) = lista(i).CodigoSolicitacao
+        vMatrizLog(i, 6) = lista(i).Atividade
+        vMatrizLog(i, 7) = lista(i).Item
+        vMatrizLog(i, 8) = lista(i).Severidade
+        vMatrizLog(i, 9) = lista(i).RegraCampo
+        vMatrizLog(i, 10) = lista(i).DescricaoErro
     Next i
     
-    Set rngTabela = wsLog.Range(wsLog.Cells(5, 1), wsLog.Cells(4 + total, 9))
+    Set rngTabela = wsLog.Range(wsLog.Cells(5, 1), wsLog.Cells(4 + total, 10))
     rngTabela.Value = vMatrizLog
     
     '-- Formatacao e Cores das Linhas de Erro
@@ -573,18 +617,18 @@ Private Sub GerarRelatorioAbaLog(ByRef lista() As RegistroInconsistencia, ByVal 
         .Borders.Color = COR_BORDA
     End With
     
-    '-- Destaca severidade linha a linha
+    '-- Destaca severidade linha a linha (Coluna 8 = H)
     For i = 1 To total
         Dim rLinha As Range
-        Set rLinha = wsLog.Range(wsLog.Cells(4 + i, 1), wsLog.Cells(4 + i, 9))
+        Set rLinha = wsLog.Range(wsLog.Cells(4 + i, 1), wsLog.Cells(4 + i, 10))
         If lista(i).Severidade = "CRITICO" Then
-            wsLog.Cells(4 + i, 7).Interior.Color = COR_CRITICO_FUNDO
-            wsLog.Cells(4 + i, 7).Font.Color = COR_CRITICO_TEXTO
-            wsLog.Cells(4 + i, 7).Font.Bold = True
+            wsLog.Cells(4 + i, 8).Interior.Color = COR_CRITICO_FUNDO
+            wsLog.Cells(4 + i, 8).Font.Color = COR_CRITICO_TEXTO
+            wsLog.Cells(4 + i, 8).Font.Bold = True
         Else
-            wsLog.Cells(4 + i, 7).Interior.Color = COR_ALERTA_FUNDO
-            wsLog.Cells(4 + i, 7).Font.Color = COR_ALERTA_TEXTO
-            wsLog.Cells(4 + i, 7).Font.Bold = True
+            wsLog.Cells(4 + i, 8).Interior.Color = COR_ALERTA_FUNDO
+            wsLog.Cells(4 + i, 8).Font.Color = COR_ALERTA_TEXTO
+            wsLog.Cells(4 + i, 8).Font.Bold = True
         End If
         
         ' Efeito zebra suave nas colunas adjacentes
@@ -595,16 +639,17 @@ Private Sub GerarRelatorioAbaLog(ByRef lista() As RegistroInconsistencia, ByVal 
     
     '-- Alinhamentos especificos
     wsLog.Range("A5:A" & (4 + total)).HorizontalAlignment = xlCenter
-    wsLog.Range("B5:B" & (4 + total)).HorizontalAlignment = xlCenter
-    wsLog.Range("C5:D" & (4 + total)).HorizontalAlignment = xlCenter
-    wsLog.Range("G5:G" & (4 + total)).HorizontalAlignment = xlCenter
+    wsLog.Range("B5:B" & (4 + total)).HorizontalAlignment = xlLeft    ' Planilha Origem alinhada a esquerda
+    wsLog.Range("C5:E" & (4 + total)).HorizontalAlignment = xlCenter
+    wsLog.Range("H5:H" & (4 + total)).HorizontalAlignment = xlCenter  ' Severidade
     
     '-- Ajuste de largura das colunas
-    wsLog.Columns("A:I").AutoFit
-    If wsLog.Columns("I").ColumnWidth < 45 Then wsLog.Columns("I").ColumnWidth = 45
+    wsLog.Columns("A:J").AutoFit
+    If wsLog.Columns("B").ColumnWidth < 32 Then wsLog.Columns("B").ColumnWidth = 32
+    If wsLog.Columns("J").ColumnWidth < 45 Then wsLog.Columns("J").ColumnWidth = 45
     
     '-- Ativa AutoFiltro
-    wsLog.Range("A4:I4").AutoFilter
+    wsLog.Range("A4:J4").AutoFilter
     wsLog.Application.ActiveWindow.SplitRow = 4
     wsLog.Application.ActiveWindow.FreezePanes = True
 End Sub
@@ -642,9 +687,10 @@ End Sub
 
 Private Sub RegistrarErro(ByRef lista() As RegistroInconsistencia, ByRef total As Long, _
                           ByRef criticos As Long, ByRef alertas As Long, _
-                          ByVal lin As Long, ByVal sContrato As String, ByVal sOS As String, _
-                          ByVal sSolic As String, ByVal sAtiv As String, ByVal sItem As String, _
-                          ByVal sSev As String, ByVal sRegra As String, ByVal sDesc As String)
+                          ByVal lin As Long, ByVal sPlanilha As String, ByVal sContrato As String, _
+                          ByVal sOS As String, ByVal sSolic As String, ByVal sAtiv As String, _
+                          ByVal sItem As String, ByVal sSev As String, ByVal sRegra As String, _
+                          ByVal sDesc As String)
     total = total + 1
     If total > UBound(lista) Then
         ReDim Preserve lista(1 To UBound(lista) + 500)
@@ -658,6 +704,7 @@ Private Sub RegistrarErro(ByRef lista() As RegistroInconsistencia, ByRef total A
     
     With lista(total)
         .LinhaOrigem = lin
+        .PlanilhaOrigem = sPlanilha
         .Contrato = sContrato
         .CodigoOS = sOS
         .CodigoSolicitacao = sSolic
@@ -668,6 +715,131 @@ Private Sub RegistrarErro(ByRef lista() As RegistroInconsistencia, ByRef total A
         .DescricaoErro = sDesc
     End With
 End Sub
+
+Private Function ObterMapaArquivosMonitoramento() As Object
+    Dim dict        As Object
+    Dim fso         As Object
+    Dim oFolder     As Object
+    Dim oFile       As Object
+    Dim sPastaMonit As String
+    Dim wbMonit     As Workbook
+    Dim wsMonit     As Worksheet
+    Dim vData       As Variant
+    Dim numLin      As Long
+    Dim cSolic      As Long
+    Dim cOS         As Long
+    Dim i           As Long
+    Dim sSolic      As String
+    Dim sOS         As String
+    Dim sNomeArq    As String
+    Dim vHeaders    As Variant
+    Dim maxCol      As Long
+    Dim appScreen   As Boolean
+    Dim appEvents   As Boolean
+    
+    Set dict = CreateObject("Scripting.Dictionary")
+    dict.CompareMode = 1 ' TextCompare (case insensitive)
+    
+    sPastaMonit = ThisWorkbook.Path & "\Monitoramento\"
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    If Not fso.FolderExists(sPastaMonit) Then
+        Set ObterMapaArquivosMonitoramento = dict
+        Exit Function
+    End If
+    
+    appScreen = Application.ScreenUpdating
+    appEvents = Application.EnableEvents
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    
+    Set oFolder = fso.GetFolder(sPastaMonit)
+    
+    For Each oFile In oFolder.Files
+        sNomeArq = oFile.Name
+        If (LCase$(sNomeArq) Like "monitoramento individual*.xls*") And Not (Left$(sNomeArq, 2) = "~$") Then
+            On Error Resume Next
+            Set wbMonit = Workbooks.Open(FileName:=oFile.Path, ReadOnly:=True, AddToMru:=False)
+            On Error GoTo 0
+            
+            If Not wbMonit Is Nothing Then
+                Set wsMonit = Nothing
+                On Error Resume Next
+                Set wsMonit = wbMonit.Worksheets("Monitoramento")
+                If wsMonit Is Nothing Then Set wsMonit = wbMonit.Worksheets(1)
+                On Error GoTo 0
+                
+                If Not wsMonit Is Nothing Then
+                    numLin = wsMonit.Cells(wsMonit.Rows.Count, 1).End(xlUp).Row
+                    If numLin < 2 Then numLin = wsMonit.Cells(wsMonit.Rows.Count, 3).End(xlUp).Row
+                    
+                    If numLin >= 2 Then
+                        vHeaders = wsMonit.Range(wsMonit.Cells(2, 1), wsMonit.Cells(2, wsMonit.Columns.Count).End(xlToLeft)).Value
+                        cSolic = LocalizarIndiceColuna(vHeaders, "Codigo da solicitacao", "Codigo da_x000a_solicitacao", "Solicitacao")
+                        cOS = LocalizarIndiceColuna(vHeaders, "Codigo OS", "OS")
+                        
+                        If cSolic = 0 Then
+                            vHeaders = wsMonit.Range(wsMonit.Cells(1, 1), wsMonit.Cells(1, wsMonit.Columns.Count).End(xlToLeft)).Value
+                            cSolic = LocalizarIndiceColuna(vHeaders, "Codigo da solicitacao", "Codigo da_x000a_solicitacao", "Solicitacao")
+                            cOS = LocalizarIndiceColuna(vHeaders, "Codigo OS", "OS")
+                        End If
+                        
+                        If cSolic > 0 Then
+                            If 3 <= numLin Then
+                                maxCol = cSolic
+                                If cOS > maxCol Then maxCol = cOS
+                                vData = wsMonit.Range(wsMonit.Cells(3, 1), wsMonit.Cells(numLin, maxCol)).Value
+                                For i = 1 To UBound(vData, 1)
+                                    sSolic = Trim$(CStr(vData(i, cSolic)))
+                                    If cOS > 0 Then
+                                        sOS = Trim$(CStr(vData(i, cOS)))
+                                    Else
+                                        sOS = ""
+                                    End If
+                                    
+                                    If Len(sSolic) > 0 Then
+                                        If Len(sOS) > 0 Then
+                                            If Not dict.Exists(sSolic & "#" & sOS) Then dict.Add sSolic & "#" & sOS, sNomeArq
+                                        End If
+                                        If Not dict.Exists(sSolic) Then dict.Add sSolic, sNomeArq
+                                    End If
+                                Next i
+                            End If
+                        End If
+                    End If
+                End If
+                wbMonit.Close SaveChanges:=False
+            End If
+        End If
+    Next oFile
+    
+    Application.ScreenUpdating = appScreen
+    Application.EnableEvents = appEvents
+    
+    Set ObterMapaArquivosMonitoramento = dict
+End Function
+
+Private Function BuscarArquivoOrigem(ByVal dict As Object, ByVal sSolic As String, ByVal sOS As String) As String
+    If dict Is Nothing Then Exit Function
+    sSolic = Trim$(sSolic)
+    sOS = Trim$(sOS)
+    
+    If Len(sSolic) > 0 And Len(sOS) > 0 Then
+        If dict.Exists(sSolic & "#" & sOS) Then
+            BuscarArquivoOrigem = dict(sSolic & "#" & sOS)
+            Exit Function
+        End If
+    End If
+    
+    If Len(sSolic) > 0 Then
+        If dict.Exists(sSolic) Then
+            BuscarArquivoOrigem = dict(sSolic)
+            Exit Function
+        End If
+    End If
+    
+    BuscarArquivoOrigem = ""
+End Function
 
 Private Function NormalizarParaComparacao(ByVal sTexto As String) As String
     Dim i As Long

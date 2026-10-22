@@ -46,9 +46,10 @@ ExpandirTabelaBuffer = Table.Buffer(ExpandirTabela),
 // SECAO 2 - LIMPEZA, TIPAGEM E FILTRO DE SITUACAO + CONTRATO
 // -------------------------------------------------------------------
 RemoverColunas = Table.RemoveColumns(ExpandirTabelaBuffer, {
-    "Nome da Origem", "Atendente", "UF", "Nome Solicitante"
+    "Atendente", "UF", "Nome Solicitante"
 }),
 DefinirTiposIniciais = Table.TransformColumnTypes(RemoverColunas, {
+    {"Nome da Origem", type text},
     {"Situação", type text},
     {"Contrato", type text},
     {"Período#(lf)faturamento", type date}
