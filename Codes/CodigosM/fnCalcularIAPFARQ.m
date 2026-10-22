@@ -2,46 +2,51 @@ let
     // -------------------------------------------------------------------
     // fnCalcularIAPFARQ
     // -------------------------------------------------------------------
-    // Equivalente M da funcao VBA calcular_IAPFARQ (modulo
-    // fncEditalGuarda) - item no 8.4.2 do contrato de guarda externa.
+    // Equivalente M da função VBA calcular_IAPFARQ (módulo fncEditalGuarda)
+    // - item nº 8.4.2 do contrato de guarda externa Petrobras.
     //
     // O QUE FAZ:
-    //   Calcula o indice IAPFARQ (percentual de solicitacoes atendidas
-    //   DENTRO DO PRAZO em relacao ao total de solicitacoes atendidas
-    //   NO PERIODO), pela formula:
+    //   Calcula o índice IAPFARQ (percentual de solicitações atendidas
+    //   DENTRO DO PRAZO em relação ao total de solicitações elegíveis
+    //   atendidas no período), pela fórmula:
     //
     //       IAPFARQ = (TSPR / TSPE) * 100
     //
-    // CASOS ESPECIAIS:
-    //   - Se TSPR = 0 e TSPE = 0 (nenhuma solicitacao atendida no
-    //     periodo, nem dentro nem fora do prazo): retorna 100 -
-    //     considera-se desempenho pleno, ja que nao houve demanda a
-    //     penalizar.
-    //   - Se TSPR = 0 e TSPE > 0 (houve atendimentos, mas nenhum
-    //     dentro do prazo - pior cenario possivel): retorna 1 em vez
-    //     de 0. Isso e fiel ao comportamento do VBA original; nao
-    //     altera o resultado final do FDM, pois ambos os valores (0
-    //     ou 1) cairiam na mesma faixa "< 90" em fnCalcularFDMMensal.
-    //
-    // OBSERVACAO SOBRE A VERSAO VBA:
-    //   O VBA original tinha duas formas equivalentes de calcular esta
-    //   formula, sendo a segunda (usada aqui) preferivel por evitar
-    //   overflow de Integer no VBA (irrelevante em M, que nao tem esse
-    //   limite, mas mantido por fidelidade ao calculo original):
-    //     'dIAPFARQ = (iTSPR * 100) / iTSPE   ' comentada no VBA
-    //     dIAPFARQ = (iTSPR / iTSPE) * 100    ' versao usada
-    //
-    // PARAMETROS:
-    //   TSPE - Total de Solicitacoes atendidas no Periodo
-    //   TSPR - Total de Solicitacoes atendidas dentro do Prazo
-    //
-    // RETORNO:
-    //   number - o indice IAPFARQ em percentual (0 a 100)
+    // CASOS ESPECIAIS & REGRAS DE ROBUSTEZ:
+    //   - Se TSPE = 0: retorna 100.0 (desempenho pleno por ausência de demanda).
+    //   - Se TSPR = 0 e TSPE > 0: retorna 0.0 (conformidade nula real).
+    //   - Clamping defensivo: garante que TSPR não exceda TSPE.
+    //   - Tratamento seguro de nulos com condicionais nativas M.
+    //   - Arredondamento padrão a 2 casas decimais via Number.Round.
     // -------------------------------------------------------------------
-    fnCalcularIAPFARQ = (TSPE as number, TSPR as number) as number =>
-        if TSPR = 0 then
-            if TSPE = 0 then 100 else 1
-        else
-            (TSPR / TSPE) * 100
+    fnCalcularIAPFARQ = (
+        TSPE as nullable number,
+        TSPR as nullable number,
+        optional casasDecimais as nullable number
+    ) as nullable number =>
+        let
+            vTSPE = if TSPE = null or TSPE < 0 then 0 else TSPE,
+            vTSPR = if TSPR = null or TSPR < 0 then 0 else TSPR,
+            precisao = if casasDecimais = null then 2 else casasDecimais,
+
+            ResultadoCalculado =
+                if vTSPE = 0 then
+                    100.0
+                else if vTSPR = 0 then
+                    0.0
+                else
+                    let
+                        vTSPRValido = if vTSPR > vTSPE then vTSPE else vTSPR,
+                        Indice = (vTSPRValido / vTSPE) * 100.0
+                    in
+                        Indice,
+
+            ResultadoFinal =
+                if ResultadoCalculado = null then
+                    null
+                else
+                    Number.Round(ResultadoCalculado, precisao)
+        in
+            ResultadoFinal
 in
     fnCalcularIAPFARQ
